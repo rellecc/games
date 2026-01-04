@@ -1,12 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My Games</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <meta http-equiv="refresh" content="0; url=HUB.html">
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #000000;
+            color: #bb86fc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .message {
+            text-align: center;
+            font-size: 1.5rem;
+            opacity: 0.8;
+        }
+        a {
+            color: #bb86fc;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-  <h1>My HTML Games</h1>
-  <ul>
-    <li><a href="HUB.html">Gaming Hub</a></li> 
-  </ul>
+    <div class="message">
+        <p>Redirecting to the game hub...</p>
+        <p>If you are not redirected automatically, <a href="HUB.html">click here</a>.</p>
+    </div>
+
+    <script>
+        // Fallback JavaScript redirect (in case meta refresh is blocked)
+        window.location.href = "HUB.html";
+    </script>
 </body>
 </html>
