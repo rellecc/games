@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Not a Game</title>
+<style>
+  html, body {
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    height:100%;
+    width:100%;
+    font-family: monospace;
+    background:black;
+    color:white;
+    text-align:center;
+  }
+  button,input,select {
+    padding:8px 12px;
+    margin:5px;
+    font-size:18px;
+    cursor:pointer;
+  }
+  #optionsScreen, #binaryConfig, #dvdConfig, #binaryScreen, #dvdScreen { display:none; }
+  canvas { display:block; }
+</style>
+</head>
+<body>
+
+<!-- Title -->
+<div id="titleScreen">
+  <h1>Not a game</h1>
+  <p>Made by Corgii</p>
+  <button onclick="showOptions()">Play</button>
+</div>
+
+<!-- Options -->
+<div id="optionsScreen">
+  <h2>Choose an option:</h2>
+  <button onclick="showBinaryConfig()">Binary</button>
+  <button onclick="showDVDConfig()">DVD</button>
+</div>
+
+<!-- Binary Config -->
+<div id="binaryConfig">
+  <h2>Binary Settings</h2>
+  <label>Speed (1-10): <input type="number" id="binSpeed" value="5" min="1" max="10"></label><br>
+  <label>Background color: <input type="color" id="binBg" value="#000000"></label><br>
+  <label>Text color: <input type="color" id="binText" value="#00FF00"></label><br>
+  <button onclick="startBinary()">Next</button>
+</div>
+
+<!-- DVD Config -->
+<div id="dvdConfig">
+  <h2>DVD Settings</h2>
+  <label>Background color: <input type="color" id="dvdBg" value="#000000"></label><br>
+  <label>Logo color: <input type="color" id="dvdColor" value="#FFFFFF"></label><br>
+  <label>Switch colors on corner hit? 
+    <select id="dvdSwitch">
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
+  </label><br>
+  <label>Speed (1-20): <input type="number" id="dvdSpeed" value="5" min="1" max="20"></label><br>
+  <button onclick="startDVD()">Next</button>
+</div>
+
+<!-- Screens -->
+<div id="binaryScreen">
+  <canvas id="binaryCanvas"></canvas>
+</div>
+
+<div id="dvdScreen">
+  <canvas id="dvdCanvas"></canvas>
+</div>
+
+<script>
+/* ---------------- Options ---------------- */
+function showOptions() {
+  document.getElementById('titleScreen').style.display='none';
+  document.getElementById('optionsScreen').style.display='block';
+}
+
+function showBinaryConfig(){
+  document.getElementById('optionsScreen').style.display='none';
+  document.getElementById('binaryConfig').style.display='block';
+}
+
+function showDVDConfig(){
+  document.getElementById('optionsScreen').style.display='none';
+  document.getElementById('dvdConfig').style.display='block';
+}
+
+/* ---------------- Binary ---------------- */
+let binaryInterval;
+function startBinary() {
+  document.getElementById('binaryConfig').style.display='none';
+  document.getElementById('binaryScreen').style.display='block';
+
+  const canvas = document.getElementById('binaryCanvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  const fontSize = 20;
+  const cols = Math.floor(canvas.width / fontSize);
+  let drops = [];
+  let speeds = [];
+
+  const speedVal = parseFloat(document.getElementById('binSpeed').value);
+  const bgColor = document.getElementById('binBg').value;
+  const textColor = document.getElementById('binText').value;
+
+  for(let i=0;i<cols;i++){
+    drops[i] = Math.floor(Math.random()*canvas.height/fontSize);
+    speeds[i] = (0.5 + Math.random()) * speedVal;
+  }
+
+  binaryInterval = setInterval(()=>{
+    ctx.fillStyle = bgColor+'20'; // slight trail effect
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = textColor;
+    ctx.font = fontSize+'px monospace';
+
+    for(let i=0;i<cols;i++){
+      const text = Math.random() < 0.5 ? '0' : '1';
+      ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+      drops[i] += speeds[i]*0.1;
+      if(drops[i]*fontSize > canvas.height) drops[i] = 0;
+    }
+  },50);
+}
+
+/* ---------------- DVD ---------------- */
+let dvdInterval;
+function startDVD(){
+  document.getElementById('dvdConfig').style.display='none';
+  document.getElementById('dvdScreen').style.display='block';
+
+  const canvas = document.getElementById('dvdCanvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  let x = Math.random()*(canvas.width-120);
+  let y = Math.random()*(canvas.height-50);
+
+  const speed = parseFloat(document.getElementById('dvdSpeed').value);
+  let dx = speed + Math.random()*2;
+  let dy = speed + Math.random()*2;
+
+  const bgColor = document.getElementById('dvdBg').value;
+  let logoColor = document.getElementById('dvdColor').value;
+  const switchColors = document.getElementById('dvdSwitch').value==='yes';
+  const text = "DVD";
+
+  const colors = ['#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFFFFF'];
+
+  dvdInterval = setInterval(()=>{
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = logoColor;
+    ctx.font='50px Arial';
+    ctx.fillText(text, x, y+50);
+
+    x += dx;
+    y += dy;
+
+    // bounce
+    if(x <=0 || x+100 >= canvas.width){
+      dx = -dx;
+      if(switchColors) logoColor = colors[Math.floor(Math.random()*colors.length)];
+    }
+    if(y <=0 || y+50 >= canvas.height){
+      dy = -dy;
+      if(switchColors) logoColor = colors[Math.floor(Math.random()*colors.length)];
+    }
+  },20);
+}
+</script>
+
+</body>
+</html>
+

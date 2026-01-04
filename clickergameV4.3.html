@@ -1,0 +1,505 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clicker Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { font-size: 72px; margin: 40px 0 10px; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        h2 { font-size: 36px; margin: 20px 0; }
+        p { font-size: 24px; margin: 10px 0 30px; }
+        button {
+            font-size: 24px;
+            padding: 15px 40px;
+            margin: 15px;
+            background: linear-gradient(#ffd700, #ffaa00);
+            color: #333;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            transition: box-shadow 0.3s ease;
+        }
+        button:hover:not(:disabled) { box-shadow: 0 12px 20px rgba(0,0,0,0.4); }
+        button:active:not(:disabled) { box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        #title-screen, #save-selection { text-align: center; padding: 50px; }
+        .save-btn { display: inline-block; width: 400px; margin: 15px 5px; font-size: 28px; padding: 20px; }
+        .delete-btn { background: linear-gradient(#ff0000, #cc0000); color: white; padding: 20px; font-size: 20px; margin-left: 10px; }
+        #game { display: flex; width: 100%; max-width: 1600px; margin: 20px; flex: 1; }
+        #left-panel, #right-sidebar { width: 350px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; margin: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        #main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #click-btn { width: 300px; height: 300px; font-size: 180px; background: radial-gradient(circle, #fff700, #ffd000); border-radius: 50%; box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: pulse 2s infinite; transition: transform 0.1s; }
+        #click-btn:hover { transform: scale(1.05); }
+        #click-btn:active { transform: scale(0.95); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,215,0,0.7); } 70% { box-shadow: 0 0 0 30px rgba(255,215,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); } }
+        #points { font-size: 60px; font-weight: bold; text-shadow: 0 0 15px #fff; }
+        #pps { font-size: 36px; margin: 15px 0; }
+        .panel-btn { width: 100%; margin: 10px 0; font-size: 22px; padding: 15px; }
+        .upgrade-item, .owned-item, .multi-item { background: rgba(255,255,255,0.2); padding: 15px; margin: 12px 0; border-radius: 15px; backdrop-filter: blur(5px); }
+        .buy-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 10px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: none !important;
+            width: 100%;
+            pointer-events: auto;
+        }
+        .buy-btn:hover:not(:disabled) { background: #4CAF50; }
+        .buy-btn:active:not(:disabled) { background: #4CAF50; }
+        .buy-btn:disabled { background: #666; cursor: not-allowed; }
+        #back-btn { position: absolute; top: 20px; left: 20px; font-size: 20px; padding: 12px 25px; background: rgba(255,255,255,0.2); }
+        .total-pps { font-size: 28px; font-weight: bold; margin-bottom: 20px; text-align: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; }
+        .multiplier-display { font-size: 24px; text-align: center; margin: 15px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="title-screen">
+        <h1>✨ Clicker Game ✨</h1>
+        <p>Made by Corgii</p>
+        <button onclick="showSaves()">🚀 Start Playing 🚀</button>
+    </div>
+
+    <div id="save-selection" style="display: none;">
+        <h2>📂 Choose Your Save 📂</h2>
+        <div>
+            <button class="save-btn" onclick="loadGame(1)">Save Slot 1 🎰 <span id="save1-info">New Game</span></button>
+            <button class="delete-btn" onclick="deleteSave(1)">🗑️</button>
+        </div>
+        <div>
+            <button class="save-btn" onclick="loadGame(2)">Save Slot 2 🎲 <span id="save2-info">New Game</span></button>
+            <button class="delete-btn" onclick="deleteSave(2)">🗑️</button>
+        </div>
+        <div>
+            <button class="save-btn" onclick="loadGame(3)">Save Slot 3 🎮 <span id="save3-info">New Game</span></button>
+            <button class="delete-btn" onclick="deleteSave(3)">🗑️</button>
+        </div>
+        <div>
+            <button class="save-btn" onclick="loadGame(4)">Save Slot 4 🕹️ <span id="save4-info">New Game</span></button>
+            <button class="delete-btn" onclick="deleteSave(4)">🗑️</button>
+        </div>
+        <button onclick="backToTitle()">⬅️ Back</button>
+    </div>
+
+    <div id="game" style="display: none;">
+        <button id="back-btn" onclick="backToTitle()">⬅️ Menu</button>
+        
+        <div id="left-panel">
+            <button class="panel-btn" onclick="toggleOwned()">🏆 Your Empire</button>
+            <div id="owned-list" style="display: none; max-height: 70vh; overflow-y: auto;"></div>
+        </div>
+
+        <div id="main">
+            <h2>💎 Points: <span id="points">0</span> 💎</h2>
+            <div id="pps">⚡ PPS: 0.00 ⚡</div>
+            <div id="multipliers">✖ Total Multiplier: x1.00 | Personal Multiplier: x1.00</div>
+            <button id="click-btn" onclick="clickPoint()">⭐</button>
+            <p>Tap the shining star! 🌟</p>
+        </div>
+
+        <div id="right-sidebar">
+            <button class="panel-btn" onclick="toggleUpgrades()">🛍️ Upgrade Shop (100 items)</button>
+            <div id="upgrades-list" style="display: none; max-height: 70vh; overflow-y: auto;"></div>
+
+            <button class="panel-btn" onclick="toggleTotalMulti()">✖ Total Multipliers</button>
+            <div id="total-multi-list" style="display: none; max-height: 70vh; overflow-y: auto;"></div>
+
+            <button class="panel-btn" onclick="togglePersonalMulti()">✖ Personal Multipliers</button>
+            <div id="personal-multi-list" style="display: none; max-height: 70vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        let points = 0;
+        let basePps = 0;
+        let totalMultiplier = 1;
+        let personalMultiplier = 1;
+        let totalMultiLevel = 0;
+        let personalMultiLevel = 0;
+        let clickValue = 1;
+        let selectedSave = 0;
+        let saveTimer = 0;
+
+        const upgrades = [
+            { name: "Lucky Charm", emoji: "🍀", baseCost: 15, increase: 1.5, owned: 0, desc: "A tiny charm brings good fortune" },
+            { name: "Magic Wand", emoji: "🪄", baseCost: 60, increase: 6, owned: 0, desc: "Waves points into existence" },
+            { name: "Crystal Ball", emoji: "🔮", baseCost: 240, increase: 24, owned: 0, desc: "Sees future points coming" },
+            { name: "Golden Horseshoe", emoji: "🧲", baseCost: 960, increase: 96, owned: 0, desc: "Attracts wealth like a magnet" },
+            { name: "Rainbow Unicorn", emoji: "🦄", baseCost: 3840, increase: 384, owned: 0, desc: "Sprinkles magical points" },
+            { name: "Phoenix Feather", emoji: "🔥", baseCost: 15360, increase: 1536, owned: 0, desc: "Rebirth brings endless points" },
+            { name: "Enchanted Tree", emoji: "🌳", baseCost: 61440, increase: 6144, owned: 0, desc: "Grows points overnight" },
+            { name: "Star Portal", emoji: "🌌", baseCost: 245760, increase: 24576, owned: 0, desc: "Pulls points from other dimensions" },
+            { name: "Dragon Hoard", emoji: "🐉", baseCost: 983040, increase: 98304, owned: 0, desc: "A dragon guards your fortune" },
+            { name: "Cosmic Forge", emoji: "⚒️", baseCost: 3932160, increase: 393216, owned: 0, desc: "Forges points from stardust" },
+            { name: "Time Weaver", emoji: "🕸️", baseCost: 15728640, increase: 1572864, owned: 0, desc: "Weaves extra time for points" },
+            { name: "Quantum Spark", emoji: "⚡", baseCost: 62914560, increase: 6291456, owned: 0, desc: "Sparks infinite possibilities" },
+            { name: "Nebula Factory", emoji: "🌫️", baseCost: 251658240, increase: 25165824, owned: 0, desc: "Mass-produces points in space" },
+            { name: "Galaxy Spinner", emoji: "🌀", baseCost: 1006632960, increase: 100663296, owned: 0, desc: "Spins entire galaxies for points" },
+            { name: "Void Harvester", emoji: "🕳️", baseCost: 4026531840, increase: 402653184, owned: 0, desc: "Harvests points from nothingness" },
+            { name: "Eternal Flame", emoji: "🕯️", baseCost: 16106127360, increase: 1610612736, owned: 0, desc: "Burns forever, producing points" },
+            { name: "Dream Weaver", emoji: "💤", baseCost: 64424509440, increase: 6442450944, owned: 0, desc: "Turns dreams into reality points" },
+            { name: "Infinity Gem", emoji: "💠", baseCost: 257698037760, increase: 25769803776, owned: 0, desc: "Contains infinite potential" },
+            { name: "Reality Bender", emoji: "🧠", baseCost: 1030792151040, increase: 103079215104, owned: 0, desc: "Bends reality to create points" },
+            { name: "God Particle", emoji: "⚛️", baseCost: 4123168604160, increase: 412316860416, owned: 0, desc: "The building block of points" },
+            { name: "Singularity Core", emoji: "🌑", baseCost: 16492674416640, increase: 1649267441664, owned: 0, desc: "Compresses points infinitely" },
+            { name: "Multiverse Hub", emoji: "🌐", baseCost: 65970697666560, increase: 6597069766656, owned: 0, desc: "Connects to every universe" },
+            { name: "Omni Generator", emoji: "♾️", baseCost: 263882790666240, increase: 26388279066624, owned: 0, desc: "Generates everything, including points" },
+            { name: "Astral Forge", emoji: "🌠", baseCost: 1055531162664960, increase: 105553116266496, owned: 0, desc: "Forges points from shooting stars" },
+            { name: "Celestial Choir", emoji: "👼", baseCost: 4222124650659840, increase: 422212465065984, owned: 0, desc: "Angels sing points into being" },
+            { name: "Chaos Engine", emoji: "🌀", baseCost: 16888498602639360, increase: 1688849860263936, owned: 0, desc: "Turns chaos into ordered points" },
+            { name: "Harmony Sphere", emoji: "🔵", baseCost: 67553994410557440, increase: 6755399441055744, owned: 0, desc: "Perfect balance creates points" },
+            { name: "Divine Spark", emoji: "✨", baseCost: 270215977642229760, increase: 27021597764222976, owned: 0, desc: "A spark from the creator" },
+            { name: "Ethereal Loom", emoji: "🕸️", baseCost: 1080863910568919040, increase: 108086391056891904, owned: 0, desc: "Weaves points from ether" },
+            { name: "Primordial Soup", emoji: "🧪", baseCost: 4323455642275676160, increase: 432345564227567616, owned: 0, desc: "The origin of all points" },
+            { name: "Cosmic Egg", emoji: "🥚", baseCost: 17293822569102704640, increase: 1729382256910270464, owned: 0, desc: "Hatches endless points" },
+            { name: "Big Bang Echo", emoji: "💥", baseCost: 69175290276410818560, increase: 6917529027641081856, owned: 0, desc: "Echo of the universe's birth" },
+            { name: "String Resonator", emoji: "🎻", baseCost: 276701161105643274240, increase: 27670116110564327424, owned: 0, desc: "Vibrates strings of reality" },
+            { name: "Dark Matter Web", emoji: "🕷️", baseCost: 1106804644422573096960, increase: 110680464442257309696, owned: 0, desc: "Invisible web catches points" },
+            { name: "Light Prism", emoji: "🔷", baseCost: 4427218577690292387840, increase: 442721857769029238784, owned: 0, desc: "Splits light into pure points" },
+            { name: "Aether Vortex", emoji: "🌪️", baseCost: 17708874310761169551360, increase: 1770887431076116955136, owned: 0, desc: "Swirling vortex of pure energy" },
+            { name: "Soul Forge", emoji: "🔥", baseCost: 70835497243044678205440, increase: 7083549724304467820544, owned: 0, desc: "Forges points from souls" },
+            { name: "Karma Wheel", emoji: "☸️", baseCost: 283341988972178712821760, increase: 28334198897217871282176, owned: 0, desc: "Good karma returns as points" },
+            { name: "Fate Spinner", emoji: "🧵", baseCost: 1133367955888714851287040, increase: 113336795588871485128704, owned: 0, desc: "Spins the threads of destiny" },
+            { name: "Destiny Loom", emoji: "🪡", baseCost: 4533471823554859405148160, increase: 453347182355485940514816, owned: 0, desc: "Weaves your destined points" },
+            { name: "Ascension Gate", emoji: "🚪", baseCost: 18133887294219437620592640, increase: 1813388729421943762059264, owned: 0, desc: "Gateway to higher point realms" },
+            { name: "Enlightenment", emoji: "☀️", baseCost: 72535549176877750482370560, increase: 7253554917687775048237056, owned: 0, desc: "True understanding of points" },
+            { name: "Nirvana Engine", emoji: "🪷", baseCost: 290142196707511001929482240, increase: 29014219670751100192948224, owned: 0, desc: "Peaceful point generation" },
+            { name: "Zen Garden", emoji: "🪴", baseCost: 1160568786830044007717928960, increase: 116056878683004400771792896, owned: 0, desc: "Raked sand produces points" },
+            { name: "Buddha Statue", emoji: "🗿", baseCost: 4642275147320176030871715840, increase: 464227514732017603087171584, owned: 0, desc: "Ancient wisdom grants points" },
+            { name: "Mandala Maker", emoji: "🔴", baseCost: 18569100589280704123486863360, increase: 1856910058928070412348686336, owned: 0, desc: "Perfect circles generate points" },
+            { name: "Sacred Chant", emoji: "🕉️", baseCost: 74276402357122816493947453440, increase: 7427640235712281649394745344, owned: 0, desc: "Om resonates with points" },
+            { name: "Lotus Bloom", emoji: "🌸", baseCost: 297105609428491265975789813760, increase: 29710560942849126597578981376, owned: 0, desc: "Beautiful flowers bloom points" },
+            { name: "Temple Bell", emoji: "🔔", baseCost: 1188422437713965063903159255040, increase: 118842243771396506390315925504, owned: 0, desc: "Each ring brings fortune" },
+            { name: "Monk Meditation", emoji: "🙏", baseCost: 4753689750855860255612637020160, increase: 475368975085586025561263702016, owned: 0, desc: "Deep focus creates points" },
+            { name: "Ancient Scroll", emoji: "📜", baseCost: 19014759003423441022450548080640, increase: 1901475900342344102245054808064, owned: 0, desc: "Secret knowledge of points" },
+            { name: "Forbidden Tome", emoji: "📖", baseCost: 76059036013693764089802192322560, increase: 7605903601369376408980219232256, owned: 0, desc: "Dark arts of point making" },
+            { name: "Elder Rune", emoji: "ᚠ", baseCost: 304236144054775056359208769290240, increase: 30423614405477505635920876929024, owned: 0, desc: "Ancient symbols of power" },
+            { name: "Mystic Circle", emoji: "⭕", baseCost: 1216944576219100225436835077160960, increase: 121694457621910022543683507716096, owned: 0, desc: "Perfect circle of magic" },
+            { name: "Alchemist Lab", emoji: "⚗️", baseCost: 4867778304876400901747340308643840, increase: 486777830487640090174734030864384, owned: 0, desc: "Turns lead into points" },
+            { name: "Philosopher Stone", emoji: "🪨", baseCost: 19471113219505603606989361234575360, increase: 1947111321950560360698936123457536, owned: 0, desc: "The ultimate treasure" },
+            { name: "Elixir of Life", emoji: "🧪", baseCost: 77884452878022414427957444938301440, increase: 7788445287802241442795744493830144, owned: 0, desc: "Immortality grants points" },
+            { name: "Arcane Tower", emoji: "🗼", baseCost: 311537811512089657711829779753205760, increase: 31153781151208965771182977975320576, owned: 0, desc: "Tall tower of wizardry" },
+            { name: "Floating Castle", emoji: "🏰", baseCost: 1246151246048358630847319119012823040, increase: 124615124604835863084731911901282304, owned: 0, desc: "Castle in the clouds" },
+            { name: "Sky Kingdom", emoji: "☁️", baseCost: 4984604984193434523389276476051285760, increase: 498460498419343452338927647605128576, owned: 0, desc: "Entire kingdom in the sky" },
+            { name: "Heavenly Throne", emoji: "👑", baseCost: 19938419936773738093557105904205168640, increase: 1993841993677373809355710590420516864, owned: 0, desc: "Seat of divine power" },
+            { name: "God Realm", emoji: "🌈", baseCost: 79753679747194952374228423616820674560, increase: 7975367974719495237422842361682067456, owned: 0, desc: "Home of the gods" },
+            { name: "Olympus Peak", emoji: "🏔️", baseCost: 319014719088779809496913694467282698240, increase: 31901471908877980949691369446728269824, owned: 0, desc: "Mountain of the gods" },
+            { name: "Valhalla Hall", emoji: "⚔️", baseCost: 1276058876355119237987654777869130792960, increase: 127605887635511923798765477786913079296, owned: 0, desc: "Warrior heaven" },
+            { name: "Elysium Fields", emoji: "🌺", baseCost: 5104235505420476951950619111476523171840, increase: 510423550542047695195061911147652317184, owned: 0, desc: "Paradise of heroes" },
+            { name: "Atlantis City", emoji: "🌊", baseCost: 20416942021681907807802476445906092687360, increase: 2041694202168190780780247644590609268736, owned: 0, desc: "Lost city beneath the waves" },
+            { name: "Crystal Palace", emoji: "🏯", baseCost: 81667768086727631231209905783624370749440, increase: 8166776808672763123120990578362437074944, owned: 0, desc: "Palace of pure crystal" },
+            { name: "Diamond Mine", emoji: "💎", baseCost: 326671072346910524924839623134497482997760, increase: 32667107234691052492483962313449748299776, owned: 0, desc: "Mines infinite diamonds" },
+            { name: "Emerald Forest", emoji: "🌲", baseCost: 1306684289387642099699358492537989931991040, increase: 130668428938764209969935849253798993199104, owned: 0, desc: "Forest of green gems" },
+            { name: "Ruby Volcano", emoji: "🌋", baseCost: 5226737157550568398797433970151959727964160, increase: 522673715755056839879743397015195972796416, owned: 0, desc: "Volcano of red rubies" },
+            { name: "Sapphire Ocean", emoji: "🌊", baseCost: 20906948630202273595189735880607838911856640, increase: 2090694863020227359518973588060783891185664, owned: 0, desc: "Ocean of blue sapphires" },
+            { name: "Pearl Lagoon", emoji: "🐚", baseCost: 83627794520809094380758943522431355647426560, increase: 8362779452080909438075894352243135564742656, owned: 0, desc: "Lagoon full of pearls" },
+            { name: "Gold Rush", emoji: "🥇", baseCost: 334511178083236377523035774089725422589706240, increase: 33451117808323637752303577408972542258970624, owned: 0, desc: "Rush of pure gold" },
+            { name: "Platinum Vault", emoji: "🔒", baseCost: 105000000000000000, increase: 53000000000000, owned: 0, desc: "Vault of rare platinum" },
+            { name: "Treasure Fleet", emoji: "🚢", baseCost: 530000000000000000, increase: 265000000000000, owned: 0, desc: "Ships bringing treasure" },
+            { name: "Pirate Cove", emoji: "🏴‍☠️", baseCost: 2650000000000000000, increase: 1320000000000000, owned: 0, desc: "Hidden pirate treasure" },
+            { name: "Lost Temple", emoji: "🛕", baseCost: 13300000000000000000, increase: 6620000000000000, owned: 0, desc: "Ancient temple riches" },
+            { name: "Pharaoh Tomb", emoji: "⚰️", baseCost: 66200000000000000000, increase: 33100000000000000, owned: 0, desc: "Cursed with riches" },
+            { name: "King's Ransom", emoji: "👑", baseCost: 331000000000000000000, increase: 166000000000000000, owned: 0, desc: "Wealth beyond kings" },
+            { name: "Empire Treasury", emoji: "🏦", baseCost: 1660000000000000000000, increase: 831000000000000000, owned: 0, desc: "Treasury of an empire" },
+            { name: "World Bank", emoji: "🌍", baseCost: 8310000000000000000000, increase: 4160000000000000000, owned: 0, desc: "Controls global wealth" },
+            { name: "Interstellar Trade", emoji: "🚀", baseCost: 41600000000000000000000, increase: 20800000000000000000, owned: 0, desc: "Trade across stars" },
+            { name: "Galactic Economy", emoji: "🪐", baseCost: 208000000000000000000000, increase: 104000000000000000000, owned: 0, desc: "Economy of a galaxy" },
+            { name: "Universal Credit", emoji: "💳", baseCost: 1040000000000000000000000, increase: 520000000000000000000, owned: 0, desc: "Currency of the universe" },
+            { name: "Dimensional Market", emoji: "📈", baseCost: 5200000000000000000000000, increase: 2600000000000000000000, owned: 0, desc: "Trade across dimensions" },
+            { name: "Reality Exchange", emoji: "🔄", baseCost: 26000000000000000000000000, increase: 13000000000000000000000, owned: 0, desc: "Exchange realities for points" },
+            { name: "Existence Broker", emoji: "🤝", baseCost: 130000000000000000000000000, increase: 65000000000000000000000, owned: 0, desc: "Buys and sells existence" },
+            { name: "Concept Trader", emoji: "💭", baseCost: 650000000000000000000000000, increase: 325000000000000000000000, owned: 0, desc: "Trades abstract concepts" },
+            { name: "Idea Factory", emoji: "💡", baseCost: 3250000000000000000000000000, increase: 1630000000000000000000000, owned: 0, desc: "Mass produces ideas" },
+            { name: "Thought Harvester", emoji: "🧠", baseCost: 16300000000000000000000000000, increase: 8130000000000000000000000, owned: 0, desc: "Harvests thoughts for points" },
+            { name: "Mind Palace", emoji: "🏛️", baseCost: 81300000000000000000000000000, increase: 40600000000000000000000000, owned: 0, desc: "Vast palace of the mind" },
+            { name: "Consciousness Web", emoji: "🕸️", baseCost: 406000000000000000000000000000, increase: 203000000000000000000000000, owned: 0, desc: "All minds connected" },
+            { name: "Collective Dream", emoji: "🌙", baseCost: 2030000000000000000000000000000, increase: 1020000000000000000000000000, owned: 0, desc: "Dream of all beings" },
+            { name: "Universal Mind", emoji: "🌌", baseCost: 10200000000000000000000000000000, increase: 5100000000000000000000000000, owned: 0, desc: "One mind for all" },
+            { name: "Cosmic Consciousness", emoji: "✨", baseCost: 51000000000000000000000000000000, increase: 25500000000000000000000000000, owned: 0, desc: "Awareness of the cosmos" },
+            { name: "Absolute Truth", emoji: "🔱", baseCost: 255000000000000000000000000000000, increase: 128000000000000000000000000000, owned: 0, desc: "The ultimate truth" },
+            { name: "Source Code", emoji: "💻", baseCost: 1280000000000000000000000000000000, increase: 640000000000000000000000000000, owned: 0, desc: "Code of reality itself" },
+            { name: "Matrix Core", emoji: "🔴", baseCost: 6400000000000000000000000000000000, increase: 3200000000000000000000000000000, owned: 0, desc: "Heart of the simulation" },
+            { name: "Simulation Engine", emoji: "🖥️", baseCost: 32000000000000000000000000000000000, increase: 16000000000000000000000000000000, owned: 0, desc: "Runs the entire simulation" },
+            { name: "Creator's Console", emoji: "🎮", baseCost: 160000000000000000000000000000000000, increase: 80000000000000000000000000000000, owned: 0, desc: "Controls everything" }
+        ];
+
+        function formatNumber(num) {
+            if (num < 1000) return Math.floor(num).toLocaleString();
+
+            const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qt", "Qn", "Sx", "Sp", "Oc", "No"];
+            let tier = 0;
+            let temp = num;
+            while (temp >= 1000 && tier < suffixes.length - 1) {
+                temp /= 1000;
+                tier++;
+            }
+            let scaled = temp.toFixed(2);
+            if (scaled.endsWith('.00')) scaled = scaled.slice(0, -3);
+            return scaled + suffixes[tier];
+        }
+
+        function formatPPS(ppsValue) {
+            return ppsValue.toFixed(2);
+        }
+
+        function showSaves() {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('save-selection').style.display = 'block';
+            document.getElementById('back-btn').style.display = 'none';
+
+            for (let i = 1; i <= 4; i++) {
+                let saveData = localStorage.getItem('clicker_save' + i);
+                let info = document.getElementById('save' + i + '-info');
+                if (saveData) {
+                    let data = JSON.parse(saveData);
+                    info.innerHTML = `<br>💎 ${formatNumber(data.points)} points`;
+                } else {
+                    info.innerText = 'New Game 🌟';
+                }
+            }
+        }
+
+        function deleteSave(slot) {
+            if (confirm('Are you sure you want to delete this save? This cannot be undone!')) {
+                localStorage.removeItem('clicker_save' + slot);
+                showSaves();
+            }
+        }
+
+        function backToTitle() {
+            saveGame();
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('save-selection').style.display = 'none';
+            document.getElementById('title-screen').style.display = 'block';
+            document.getElementById('back-btn').style.display = 'none';
+        }
+
+        function loadGame(slot) {
+            selectedSave = slot;
+            let saveData = localStorage.getItem('clicker_save' + slot);
+            if (saveData) {
+                let data = JSON.parse(saveData);
+                points = data.points || 0;
+                totalMultiplier = data.totalMultiplier || 1;
+                personalMultiplier = data.personalMultiplier || 1;
+                totalMultiLevel = data.totalMultiLevel || 0;
+                personalMultiLevel = data.personalMultiLevel || 0;
+                upgrades.forEach((u, i) => {
+                    u.owned = data.upgrades && data.upgrades[i] ? data.upgrades[i].owned || 0 : 0;
+                });
+            } else {
+                points = 0;
+                totalMultiplier = 1;
+                personalMultiplier = 1;
+                totalMultiLevel = 0;
+                personalMultiLevel = 0;
+                upgrades.forEach(u => u.owned = 0);
+            }
+            calculatePPS();
+            document.getElementById('save-selection').style.display = 'none';
+            document.getElementById('game').style.display = 'flex';
+            document.getElementById('back-btn').style.display = 'block';
+            updateDisplay();
+            updateUpgradesList();
+            updateOwnedList();
+        }
+
+        function calculatePPS() {
+            basePps = upgrades.reduce((sum, u) => sum + u.owned * u.increase, 0);
+        }
+
+        function clickPoint() {
+            points += clickValue * personalMultiplier;
+            updateDisplay();
+            refreshAllIfOpen();
+        }
+
+        function updateDisplay() {
+            document.getElementById('points').innerText = formatNumber(points);
+            document.getElementById('pps').innerText = `⚡ PPS: ${formatPPS(basePps * totalMultiplier)} ⚡`;
+            document.getElementById('multipliers').innerText = `✖ Total Multiplier: x${totalMultiplier.toFixed(2)} | Personal Multiplier: x${personalMultiplier.toFixed(2)}`;
+        }
+
+        function isUpgradesOpen() {
+            return document.getElementById('upgrades-list').style.display === 'block';
+        }
+
+        function refreshAllIfOpen() {
+            if (isUpgradesOpen()) updateUpgradesList();
+            if (document.getElementById('total-multi-list').style.display === 'block') updateTotalMultiList();
+            if (document.getElementById('personal-multi-list').style.display === 'block') updatePersonalMultiList();
+        }
+
+        function toggleUpgrades() {
+            const list = document.getElementById('upgrades-list');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+            if (list.style.display === 'block') updateUpgradesList();
+        }
+
+        function toggleTotalMulti() {
+            const list = document.getElementById('total-multi-list');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+            if (list.style.display === 'block') updateTotalMultiList();
+        }
+
+        function togglePersonalMulti() {
+            const list = document.getElementById('personal-multi-list');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+            if (list.style.display === 'block') updatePersonalMultiList();
+        }
+
+        function updateUpgradesList() {
+            let html = '';
+            upgrades.forEach((u, i) => {
+                const currentCost = Math.floor(u.baseCost * Math.pow(1.15, u.owned));
+                const canAfford = points >= currentCost;
+                html += `<div class="upgrade-item">
+                    <strong>${u.emoji} ${u.name}</strong><br>
+                    💰 Cost: ${formatNumber(currentCost)}<br>
+                    ⚡ Each produces: ${formatPPS(u.increase)} pps<br>
+                    ${u.desc}<br>
+                    🏭 Owned: ${u.owned}<br>
+                    <button class="buy-btn" data-index="${i}" ${!canAfford ? 'disabled' : ''}>
+                        Buy ${u.emoji}
+                    </button>
+                </div>`;
+            });
+            document.getElementById('upgrades-list').innerHTML = html;
+            document.querySelectorAll('.buy-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const index = parseInt(this.dataset.index);
+                    buyUpgrade(index);
+                };
+            });
+        }
+
+        function updateTotalMultiList() {
+            const cost = Math.floor(1e12 * Math.pow(1.5, totalMultiLevel));
+            const next = (totalMultiplier + 0.05).toFixed(2);
+            const canAfford = points >= cost;
+            document.getElementById('total-multi-list').innerHTML = `
+                <div class="multi-item">
+                    <strong>✖ Global PPS Multiplier</strong><br>
+                    Current: x${totalMultiplier.toFixed(2)}<br>
+                    Next: x${next}<br>
+                    💰 Cost: ${formatNumber(cost)}<br>
+                    <button class="buy-btn" onclick="buyTotalMulti()" ${!canAfford ? 'disabled' : ''}>
+                        Buy Total Multiplier
+                    </button>
+                </div>`;
+        }
+
+        function buyTotalMulti() {
+            const cost = Math.floor(1e12 * Math.pow(1.5, totalMultiLevel));
+            if (points >= cost) {
+                points -= cost;
+                totalMultiLevel++;
+                totalMultiplier += 0.05;
+                calculatePPS();
+                updateDisplay();
+                updateTotalMultiList();
+            }
+        }
+
+        function updatePersonalMultiList() {
+            const cost = Math.floor(1e9 * Math.pow(1.4, personalMultiLevel));
+            const next = (personalMultiplier + 0.5).toFixed(2);
+            const canAfford = points >= cost;
+            document.getElementById('personal-multi-list').innerHTML = `
+                <div class="multi-item">
+                    <strong>✖ Personal Click Multiplier</strong><br>
+                    Current: x${personalMultiplier.toFixed(2)}<br>
+                    Next: x${next}<br>
+                    💰 Cost: ${formatNumber(cost)}<br>
+                    <button class="buy-btn" onclick="buyPersonalMulti()" ${!canAfford ? 'disabled' : ''}>
+                        Buy Personal Multiplier
+                    </button>
+                </div>`;
+        }
+
+        function buyPersonalMulti() {
+            const cost = Math.floor(1e9 * Math.pow(1.4, personalMultiLevel));
+            if (points >= cost) {
+                points -= cost;
+                personalMultiLevel++;
+                personalMultiplier += 0.5;
+                updateDisplay();
+                updatePersonalMultiList();
+            }
+        }
+
+        function buyUpgrade(index) {
+            const u = upgrades[index];
+            const cost = Math.floor(u.baseCost * Math.pow(1.15, u.owned));
+            if (points >= cost) {
+                points -= cost;
+                u.owned++;
+                calculatePPS();
+                updateDisplay();
+                updateUpgradesList();
+                updateOwnedList();
+            }
+        }
+
+        function toggleOwned() {
+            const list = document.getElementById('owned-list');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+            if (list.style.display === 'block') updateOwnedList();
+        }
+
+        function updateOwnedList() {
+            let html = `<div class="total-pps">⚡ Total PPS: ${formatPPS(basePps * totalMultiplier)} ⚡</div>`;
+            upgrades.filter(u => u.owned > 0).forEach(u => {
+                const totalFromThis = u.owned * u.increase * totalMultiplier;
+                html += `<div class="owned-item">
+                    <strong>${u.emoji} ${u.name} ×${u.owned}</strong><br>
+                    ⚡ Producing ${formatPPS(totalFromThis)} pps<br>
+                    (${formatPPS(u.increase)} base each)<br>
+                    ${u.desc}
+                </div>`;
+            });
+            document.getElementById('owned-list').innerHTML = html || '<p>🛍️ Nothing owned yet!</p>';
+        }
+
+        function saveGame() {
+            if (selectedSave) {
+                localStorage.setItem('clicker_save' + selectedSave, JSON.stringify({
+                    points: points,
+                    totalMultiplier: totalMultiplier,
+                    personalMultiplier: personalMultiplier,
+                    totalMultiLevel: totalMultiLevel,
+                    personalMultiLevel: personalMultiLevel,
+                    upgrades: upgrades.map(u => ({ owned: u.owned }))
+                }));
+            }
+        }
+
+        setInterval(() => {
+            points += (basePps * totalMultiplier) / 10;
+            updateDisplay();
+            refreshAllIfOpen();
+            saveTimer += 100;
+            if (saveTimer >= 30000) {
+                saveGame();
+                saveTimer = 0;
+            }
+        }, 100);
+
+        document.getElementById('back-btn').style.display = 'none';
+    </script>
+</body>
+</html>

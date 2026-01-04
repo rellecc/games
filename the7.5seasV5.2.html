@@ -1,0 +1,388 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The 7 1/2 Seas</title>
+<style>
+body { margin:0; display:flex; font-family:'Courier New', monospace; background:#000; color:#0f0; height:100vh; overflow:hidden; }
+#sidebar { width:250px; background:#010; padding:10px; box-sizing:border-box; border-right:2px solid #0f0; display:flex; flex-direction:column; }
+#dayCounter { font-family:monospace; font-size:16px; margin-bottom:10px; }
+#invContent { flex:1; overflow:auto; white-space:pre-wrap; }
+#main { flex:1; padding:10px; display:flex; flex-direction:column; height:100vh; }
+#output { flex:1; overflow-y:auto; white-space:pre-wrap; margin-bottom:10px; }
+#inputRow { display:flex; margin-top:5px; flex-shrink:0; }
+#command { flex:1; background:#000; color:#0f0; border:1px solid #0f0; padding:5px; font-family:monospace; font-size:16px; }
+button { background:#000; color:#0f0; border:1px solid #0f0; margin-left:5px; cursor:pointer; font-family:monospace; }
+#startScreen, #saveScreen { position:absolute; top:0; left:0; width:100%; height:100%; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:10; }
+#startScreen h1, #saveScreen h1 { font-size:40px; margin:0; }
+#startScreen h2 { margin:5px 0 20px 0; }
+#startScreen button, #saveScreen button { font-size:20px; padding:10px 20px; margin:5px; }
+.saveSlot { 
+  margin:10px 5px; 
+  width:300px; 
+  padding:15px; 
+  text-align:center; 
+  font-size:18px;
+}
+.deleteBtn {
+  font-size:14px;
+  padding:5px 10px;
+  margin-top:8px;
+  width:100px;
+  background:#300;
+  border:1px solid #f00;
+  color:#f00;
+}
+.slotContainer {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  margin:10px;
+}
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <div id="dayCounter">Day: 1</div>
+  <div id="invContent"></div>
+</div>
+<div id="main">
+  <div id="output"></div>
+  <div id="inputRow">
+    <input type="text" id="command" placeholder="Enter command here...">
+    <button id="enterBtn">Enter</button>
+  </div>
+</div>
+<div id="startScreen">
+  <h1>The 7 1/2 Seas</h1>
+  <h2>by Corgii</h2>
+  <button id="playBtn">Play</button>
+</div>
+<div id="saveScreen" style="display:none;">
+  <h1>Select Save</h1>
+  <div id="saveSlots"></div>
+</div>
+<script>
+let inv, character, currentPort, portCount, day, traveling=false, merchantOffer=null, atIsland=false, selectedSlot=null;
+const metals = ["gold","diamonds","silver","copper","bronze"];
+const spices = ["red","orange","yellow","green","blue","indigo","violet"];
+const allGoods = metals.concat(spices).concat(["wood"]);
+const goodRanges = {
+  gold:[10,300], diamonds:[20,500], silver:[5,200], copper:[1,100], bronze:[1,50],
+  red:[1,50], orange:[2,60], yellow:[3,70], green:[5,80], blue:[10,100], indigo:[15,150], violet:[25,250],
+  wood:[1,50]
+};
+const weatherTypes = ["Calm seas","Storm","Fog","Rain"];
+const pirateEvents = [
+  {desc:"You encounter a merchant ship.", outcomes:[
+    ()=> { let g=Math.floor(Math.random()*150); inv.coins+=g; return `You plundered coins (+${g})`; },
+    ()=> { let w=Math.floor(Math.random()*30); inv.wood+=w; return `You took wood (+${w})`; },
+    ()=> { let g=Math.min(inv.coins,Math.floor(Math.random()*50)); inv.coins-=g; return `You lost coins (-${g})`; },
+    ()=> { let s=spices[Math.floor(Math.random()*spices.length)]; inv[s]+=1; return `You found a ${s} spice (+1)`; }
+  ]},
+  {desc:"A storm hits!", outcomes:[
+    ()=> { let w=Math.min(inv.wood,Math.floor(Math.random()*20)); inv.wood-=w; return `Your ship lost wood (-${w})`; },
+    ()=> { return "You survived the storm unscathed"; }
+  ]},
+  {desc:"You find floating treasure!", outcomes:[
+    ()=> { let g=Math.floor(Math.random()*100); inv.coins+=g; return `You collected coins (+${g})`; },
+    ()=> { let m=metals[Math.floor(Math.random()*metals.length)]; inv[m]+=1; return `You discovered ${m} (+1)`; }
+  ]}
+];
+const merchantEvents = [
+  {desc:"You meet a traveling merchant.", outcomes:[
+    (callback)=>{
+      let goods = allGoods[Math.floor(Math.random()*allGoods.length)];
+      let amount = Math.floor(Math.random()*5)+1;
+      let price = Math.floor(Math.random()*50)+1;
+      print(`Traveling merchant is selling ${amount} ${goods} for ${price} coins. Type "yes" to buy, "no" to skip.`);
+      callback.merchantOffer = {goods, amount, price};
+    },
+    ()=> { let w=Math.floor(Math.random()*10); inv.wood+=w; return `You gained wood (+${w})`; },
+    ()=> { return "Nothing happened"; }
+  ]},
+  {desc:"A storm hits!", outcomes:[
+    ()=> { let w=Math.min(inv.wood,Math.floor(Math.random()*10)); inv.wood-=w; return `Your ship lost wood (-${w})`; },
+    ()=> { return "You survived the storm"; }
+  ]}
+];
+const islandEvents = [
+  ()=> { let g=Math.floor(Math.random()*100); inv.coins+=g; return `You found coins (+${g})`; },
+  ()=> { let w=Math.floor(Math.random()*50); inv.wood+=w; return `You collected wood (+${w})`; },
+  ()=> { let s=spices[Math.floor(Math.random()*spices.length)]; inv[s]+=1; return `You found a ${s} spice (+1)`; },
+  ()=> { let m=metals[Math.floor(Math.random()*metals.length)]; inv[m]+=1; return `You discovered ${m} (+1)`; },
+  ()=> { let lost = Math.floor(Math.random()*20); inv.coins = Math.max(0, inv.coins-lost); return `A thief stole coins (-${lost})`; },
+  ()=> { return "You rested and recovered"; }
+];
+
+const outputDiv = document.getElementById('output');
+const invDiv = document.getElementById('invContent');
+const dayCounter = document.getElementById('dayCounter');
+const commandInput = document.getElementById('command');
+
+function print(msg){
+  outputDiv.innerText += msg+"\n";
+  outputDiv.scrollTop = outputDiv.scrollHeight;
+}
+
+function updateInventory(){
+  let text = `Coins: ${inv.coins}\nGold: ${inv.gold}\nDiamonds: ${inv.diamonds}\nSilver: ${inv.silver}\nCopper: ${inv.copper}\nBronze: ${inv.bronze}\n`;
+  spices.forEach(s=>{ text += `${s.charAt(0).toUpperCase()+s.slice(1)} Spice: ${inv[s]}\n` });
+  text += `Wood: ${inv.wood}`;
+  invDiv.innerText = text;
+  dayCounter.innerText = `Day: ${day}`;
+}
+
+function saveGame(){
+  const saveData = {inv, character, currentPort, portCount, day};
+  localStorage.setItem("save"+selectedSlot, JSON.stringify(saveData));
+}
+
+function loadSave(slot){
+  const data = localStorage.getItem("save"+slot);
+  if(data){
+    let obj = JSON.parse(data);
+    inv = obj.inv;
+    character = obj.character;
+    currentPort = obj.currentPort;
+    portCount = obj.portCount;
+    day = obj.day;
+    return true;
+  } else {
+    inv = {coins:50, gold:0, diamonds:0, silver:0, copper:0, bronze:0, red:0,orange:0,yellow:0,green:0,blue:0,indigo:0,violet:0, wood:0};
+    character = null; currentPort = null; portCount = 0; day = 1;
+    return false;
+  }
+}
+
+function showSaveScreen(){
+  document.getElementById("startScreen").style.display="none";
+  const saveDiv = document.getElementById("saveSlots");
+  saveDiv.innerHTML="";
+
+  for(let i=1; i<=4; i++){
+    const container = document.createElement("div");
+    container.className = "slotContainer";
+
+    const btn = document.createElement("button");
+    btn.className = "saveSlot";
+    btn.dataset.slot = i;
+
+    let rawData = localStorage.getItem("save"+i);
+    let text = "Empty Slot";
+
+    if(rawData){
+      try {
+        let obj = JSON.parse(rawData);
+        text = `Save ${i}\n${obj.character || "Unknown"} | Day ${obj.day} | Coins: ${obj.inv.coins}`;
+      } catch(e) {
+        text = "Corrupted Save";
+      }
+    }
+
+    btn.innerText = text;
+    btn.onclick = () => selectSave(i, rawData);
+    container.appendChild(btn);
+
+    // Add Delete button only if save exists
+    if(rawData){
+      const delBtn = document.createElement("button");
+      delBtn.className = "deleteBtn";
+      delBtn.innerText = "Delete";
+      delBtn.onclick = (e) => {
+        e.stopPropagation(); // Prevent triggering the load
+        if(confirm(`Permanently delete Save ${i}? This cannot be undone.`)){
+          localStorage.removeItem("save"+i);
+          showSaveScreen(); // Refresh the screen
+        }
+      };
+      container.appendChild(delBtn);
+    }
+
+    saveDiv.appendChild(container);
+  }
+
+  document.getElementById("saveScreen").style.display="flex";
+}
+
+function selectSave(slot, rawData){
+  selectedSlot = slot;
+  if(rawData){
+    loadSave(slot);
+    print(`Loaded Save ${slot} - ${character}`);
+    document.getElementById("saveScreen").style.display="none";
+    updateInventory();
+    if(!currentPort) currentPort = generatePort();
+    showPort();
+  } else {
+    chooseCharacter();
+  }
+}
+
+function chooseCharacter(){
+  const saveDiv = document.getElementById("saveSlots");
+  saveDiv.innerHTML = "";
+
+  const h1 = document.createElement("h2");
+  h1.innerText = "Choose your character:";
+  saveDiv.appendChild(h1);
+
+  const pirateBtn = document.createElement("button");
+  pirateBtn.innerText = "Pirate";
+  pirateBtn.onclick = () => startNewGame("pirate");
+
+  const merchantBtn = document.createElement("button");
+  merchantBtn.innerText = "Merchant";
+  merchantBtn.onclick = () => startNewGame("merchant");
+
+  saveDiv.appendChild(pirateBtn);
+  saveDiv.appendChild(merchantBtn);
+}
+
+function startNewGame(type){
+  character = type;
+  inv = {coins:50, gold:0, diamonds:0, silver:0, copper:0, bronze:0, red:0,orange:0,yellow:0,green:0,blue:0,indigo:0,violet:0, wood:0};
+  day = 1; portCount = 0; currentPort = generatePort();
+  document.getElementById("saveScreen").style.display="none";
+  print(`Started new game as ${character}`);
+  showPort();
+  updateInventory();
+  saveGame();
+}
+
+function generatePort(){
+  portCount++;
+  let goods = {};
+  allGoods.forEach(g=>{
+    let [min,max] = goodRanges[g];
+    let buy = Math.floor(Math.random()*(max-min)+min);
+    let sell = Math.floor(Math.random()*(max-min)+min);
+    goods[g] = {buy, buySell:sell, min, max, bought:false};
+  });
+  return {name:`Port ${portCount}`, goods};
+}
+
+function showPort(){
+  atIsland = false;
+  print(`\n--- You arrived at ${currentPort.name} ---`);
+  print("Goods (Buy / Sell) [min-max]:");
+  for(let g in currentPort.goods){
+    let gd = currentPort.goods[g];
+    let sold = gd.bought ? " (cannot sell)" : "";
+    print(`${g}: Buy ${gd.buy} / Sell ${gd.buySell} [${gd.min}-${gd.max}]${sold}`);
+  }
+  print("Commands: buy [good] [amt/max], sell [good] [amt/max], travel port, travel island");
+}
+
+function travel(destination){
+  if(traveling) { print("Already traveling..."); return; }
+  traveling = true;
+  print(`\nYou set sail towards a ${destination}...`);
+  let weather = weatherTypes[Math.floor(Math.random()*weatherTypes.length)];
+  print(`Weather: ${weather}`);
+
+  setTimeout(()=>{
+    day++;
+    if(destination === "port"){
+      currentPort = generatePort();
+      showPort();
+    } else {
+      atIsland = true;
+      let outcome = islandEvents[Math.floor(Math.random()*islandEvents.length)];
+      print("\nYou explore the island...");
+      print(outcome());
+    }
+    updateInventory();
+    traveling = false;
+    saveGame();
+
+    if(inv.wood < 0){
+      print("Your ship cannot survive! Save lost.");
+      localStorage.removeItem("save"+selectedSlot);
+    }
+  }, 500);
+}
+
+function handleCommand(cmd){
+  let parts = cmd.trim().toLowerCase().split(" ");
+  if(merchantOffer && (parts[0] === "yes" || parts[0] === "no")){
+    if(parts[0] === "yes"){
+      if(inv.coins >= merchantOffer.price){
+        inv[merchantOffer.goods] += merchantOffer.amount;
+        inv.coins -= merchantOffer.price;
+        print(`Bought ${merchantOffer.amount} ${merchantOffer.goods} for ${merchantOffer.price} coins`);
+      } else print("Not enough coins to buy this offer");
+    } else print("Skipped offer");
+    merchantOffer = null;
+    updateInventory();
+    saveGame();
+    return;
+  }
+
+  if(atIsland && (parts[0] === "buy" || parts[0] === "sell")){
+    print("Cannot trade on an island! Travel to a port first.");
+    return;
+  }
+
+  if(parts[0] === "buy" && parts.length === 3){
+    if(!currentPort){ print("Not at a port"); return; }
+    let g = parts[1];
+    if(parts[2] === "max"){
+      let maxAmt = Math.floor(inv.coins / currentPort.goods[g].buy);
+      if(maxAmt > 0){
+        inv[g] += maxAmt;
+        inv.coins -= maxAmt * currentPort.goods[g].buy;
+        currentPort.goods[g].bought = true;
+        print(`Bought ${maxAmt} ${g} for ${maxAmt * currentPort.goods[g].buy} coins`);
+      } else print("Not enough coins");
+    } else {
+      let amt = parseInt(parts[2]);
+      if(currentPort.goods[g]){
+        let cost = currentPort.goods[g].buy * amt;
+        if(inv.coins >= cost){
+          inv[g] += amt; inv.coins -= cost;
+          currentPort.goods[g].bought = true;
+          print(`Bought ${amt} ${g} for ${cost} coins`);
+        } else print("Not enough coins");
+      } else print("Invalid good");
+    }
+  } else if(parts[0] === "sell" && parts.length === 3){
+    if(!currentPort){ print("Not at a port"); return; }
+    let g = parts[1];
+    let amtStr = parts[2];
+    if(currentPort.goods[g]){
+      if(currentPort.goods[g].bought){ print(`Cannot sell ${g} here`); return; }
+      let amt = amtStr === "max" ? inv[g] : parseInt(amtStr);
+      if(inv[g] >= amt){
+        let gain = currentPort.goods[g].buySell * amt;
+        inv[g] -= amt; inv.coins += gain;
+        print(`Sold ${amt} ${g} for ${gain} coins`);
+      } else print("Not enough items");
+    } else print("Invalid good");
+  } else if(parts[0] === "travel"){
+    if(parts[1] === "port") travel("port");
+    else if(parts[1] === "island") travel("island");
+    else print("Specify: travel port or travel island");
+  } else {
+    print("Commands: buy [good] [amt/max], sell [good] [amt/max], travel port, travel island, yes/no for offers");
+  }
+  updateInventory();
+  saveGame();
+}
+
+document.getElementById("enterBtn").onclick = () => {
+  handleCommand(commandInput.value);
+  commandInput.value = "";
+};
+
+commandInput.addEventListener("keypress", e => {
+  if(e.key === "Enter"){
+    handleCommand(commandInput.value);
+    commandInput.value = "";
+  }
+});
+
+document.getElementById("playBtn").onclick = showSaveScreen;
+</script>
+</body>
+</html>

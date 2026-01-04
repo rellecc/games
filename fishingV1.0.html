@@ -1,0 +1,698 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1shing</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(to bottom, #a0d8ef, #e0f7fa);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+        .screen {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 650px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 64px;
+            margin: 0 0 10px 0;
+            color: #006699;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .author {
+            font-size: 28px;
+            margin: 10px 0 40px;
+            color: #444;
+        }
+        button {
+            font-size: 20px;
+            padding: 14px 28px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .big-btn {
+            display: block;
+            width: 500px;
+            margin: 15px auto;
+            padding: 18px;
+            font-size: 26px;
+            background: #2196F3;
+            color: white;
+        }
+        .big-btn:hover {
+            background: #1976D2;
+        }
+        .danger-btn {
+            background: #f44336;
+        }
+        .danger-btn:hover {
+            background: #d32f2f;
+        }
+        .save-info {
+            font-size: 18px;
+            margin: 10px 0 20px;
+            color: #555;
+            font-weight: bold;
+        }
+        #game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            max-width: 700px;
+            width: 100%;
+        }
+        #canvas {
+            border: 4px solid #006699;
+            border-radius: 15px;
+            background: #87CEEB;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        #ui-top {
+            display: flex;
+            justify-content: space-between;
+            width: 540px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 24px;
+        }
+        #fish-display {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        #sell-fish-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: #FF9800;
+        }
+        #sell-fish-btn:hover {
+            background: #e68a00;
+        }
+        #back-btn {
+            background: #f44336;
+            border-radius: 10px;
+        }
+        #shop-btn {
+            background: #9C27B0;
+            border-radius: 10px;
+        }
+        #current-info {
+            font-size: 20px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            width: 540px;
+        }
+        #score {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        #instructions {
+            margin: 20px 0;
+            font-size: 18px;
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 540px;
+        }
+        #shop-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #shop-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        #shop-content h2 {
+            font-size: 36px;
+            color: #006699;
+            margin-top: 0;
+        }
+        .rod-item {
+            border: 2px solid #ddd;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 15px;
+            transition: all 0.2s;
+        }
+        .rod-item:hover {
+            border-color: #2196F3;
+            transform: translateY(-3px);
+        }
+        .rod-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #006699;
+        }
+        .buy-btn { background: #2196F3; color: white; padding: 10px 20px; border-radius: 8px; }
+        .equip-btn { background: #4CAF50; color: white; padding: 10px 20px; border-radius: 8px; }
+        .cant-afford { color: #999; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div id="title-screen" class="screen">
+        <h1>F1shing</h1>
+        <p class="author">Made by Corgii</p>
+        <button id="start-btn" class="big-btn">Start Game</button>
+    </div>
+
+    <div id="save-screen" class="screen" style="display:none;">
+        <h1>Select Save Slot</h1>
+        <div id="saves-list"></div>
+        <button id="back-to-title">Back</button>
+    </div>
+
+    <div id="difficulty-screen" class="screen" style="display:none;">
+        <h1>Select Difficulty</h1>
+        <p><strong>Note:</strong> Difficulty is locked once chosen. Wipe save to change.</p>
+        <button class="big-btn" data-diff="easy">EASY</button>
+        <div class="save-info">Big zone · Slow dot · Only 1 hit needed</div>
+        
+        <button class="big-btn" data-diff="casual">CASUAL</button>
+        <div class="save-info">Forgiving · 2 hits needed</div>
+        
+        <button class="big-btn" data-diff="normal">NORMAL</button>
+        <div class="save-info">Standard · 3 hits needed</div>
+        
+        <button class="big-btn" data-diff="hard">HARD</button>
+        <div class="save-info">4 hits needed</div>
+        
+        <button class="big-btn" data-diff="expert">EXPERT</button>
+        <div class="save-info">5 hits needed</div>
+        
+        <button class="big-btn" data-diff="hardcore">HARDCORE</button>
+        <div class="save-info">Dot speeds up +8% each hit · 4 hits needed</div>
+        
+        <button class="big-btn" data-diff="master">MASTER ANGLER</button>
+        <div class="save-info">Extreme · Dot +10% speed per hit · 6 hits needed</div>
+        
+        <button id="back-to-saves">Back</button>
+    </div>
+
+    <div id="game-container">
+        <div id="current-info"></div>
+        <div id="ui-top">
+            <button id="back-btn">Title Screen</button>
+            <div id="fish-display">🐟 x0</div>
+            <div>
+                <span id="coins-display">Coins: 0 🪙</span>
+                <button id="sell-fish-btn">Sell Fish (1🪙)</button>
+            </div>
+        </div>
+        <canvas id="canvas" width="540" height="420"></canvas>
+        <div id="score">Points: 0 / 3</div>
+        <div id="instructions">
+            Click anywhere or press <strong>Space</strong> when the bobber turns <span style="color:red;">red</span>!<br>
+            Then time your next click/space when the blue dot is in the green zone.
+        </div>
+        <button id="shop-btn" class="big-btn">Rod Shop</button>
+    </div>
+
+    <div id="shop-modal">
+        <div id="shop-content">
+            <h2>Rod Shop</h2>
+            <div>Coins: <span id="shop-coins">0</span> 🪙</div>
+            <div id="current-rod">Equipped: Basic Rod</div>
+            <div id="rods-list"></div>
+            <button id="close-shop" style="margin-top:20px;">Close Shop</button>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const titleScreen = document.getElementById('title-screen');
+        const saveScreen = document.getElementById('save-screen');
+        const difficultyScreen = document.getElementById('difficulty-screen');
+        const gameContainer = document.getElementById('game-container');
+        const savesList = document.getElementById('saves-list');
+        const startBtn = document.getElementById('start-btn');
+        const backToTitle = document.getElementById('back-to-title');
+        const backToSaves = document.getElementById('back-to-saves');
+        const backBtn = document.getElementById('back-btn');
+        const currentInfo = document.getElementById('current-info');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const fishDisplay = document.getElementById('fish-display');
+        const coinsDisplay = document.getElementById('coins-display');
+        const sellFishBtn = document.getElementById('sell-fish-btn');
+        const shopBtn = document.getElementById('shop-btn');
+        const shopModal = document.getElementById('shop-modal');
+        const closeShop = document.getElementById('close-shop');
+        const shopCoins = document.getElementById('shop-coins');
+        const currentRodDiv = document.getElementById('current-rod');
+        const rodsList = document.getElementById('rods-list');
+
+        const TOTAL_SLOTS = 6;
+        let currentSlot = null;
+        let fishCaught = 0;
+        let coins = 0;
+        let ownedRods = ['basic'];
+        let currentRodId = 'basic';
+        let difficulty = 'normal';
+
+        // Game state
+        let points = 0;
+        let hitsNeeded = 3; // will be set based on difficulty
+        let speedIncreasePerHit = 1.0;
+        let inMiniGame = false;
+        let isRed = false;
+        let dotAngle = 0;
+        let dotSpeed = 4;
+        let zoneStart = 0;
+        let baseZoneSize = 60;
+        let animationFrame;
+        let redTimeout;
+
+        const MIN_ZONE_DIST = 120;
+
+        function angleDistance(a, b) {
+            let diff = Math.abs(a - b) % 360;
+            return Math.min(diff, 360 - diff);
+        }
+
+        const rods = [
+            {id: 'basic', name: 'Basic Rod', cost: 0, desc: 'The starter rod. Reliable.', effects: {}},
+            {id: 'quick1', name: 'Quick Cast I', cost: 3, desc: 'Bites 10% faster', effects: {bite: 0.9}},
+            {id: 'slowdot1', name: 'Steady Hand I', cost: 4, desc: 'Dot 8% slower', effects: {dot: 0.92}},
+            {id: 'bigzone1', name: 'Wide Arc I', cost: 5, desc: 'Zone +10% bigger', effects: {zone: 1.1}},
+            {id: 'combo1', name: 'Combo Starter', cost: 6, desc: 'Bites 10% faster + zone +8%', effects: {bite: 0.9, zone: 1.08}},
+            {id: 'lucky1', name: 'Lucky Charm I', cost: 7, desc: '5% auto-success', effects: {lucky: 0.05}},
+            {id: 'quick2', name: 'Quick Cast II', cost: 8, desc: 'Bites 18% faster', effects: {bite: 0.82}},
+            {id: 'breeze', name: 'Breeze Rod', cost: 9, desc: 'Bites 15% faster but zone -5%', effects: {bite: 0.85, zone: 0.95}},
+            {id: 'slowdot2', name: 'Steady Hand II', cost: 10, desc: 'Dot 15% slower', effects: {dot: 0.85}},
+            {id: 'patient', name: 'Patient Fisher', cost: 11, desc: 'Dot 20% slower but bites 15% slower', effects: {dot: 0.8, bite: 1.15}},
+            {id: 'bigzone2', name: 'Wide Arc II', cost: 12, desc: 'Zone +18% bigger', effects: {zone: 1.18}},
+            {id: 'calm', name: 'Calm Waters', cost: 13, desc: 'Dot 12% slower', effects: {dot: 0.88}},
+            {id: 'combo2', name: 'Balanced Angler', cost: 14, desc: 'Small bonuses all around', effects: {bite: 0.9, dot: 0.93, zone: 1.1}},
+            {id: 'quick3', name: 'Quick Cast III', cost: 15, desc: 'Bites 25% faster', effects: {bite: 0.75}},
+            {id: 'iron', name: 'Iron Will', cost: 16, desc: 'Zone +12%', effects: {zone: 1.12}},
+            {id: 'lucky2', name: 'Lucky Charm II', cost: 18, desc: '10% auto-success', effects: {lucky: 0.1}},
+            {id: 'swift', name: 'Swift Strike', cost: 19, desc: 'Bites 20% faster', effects: {bite: 0.8}},
+            {id: 'bigzone3', name: 'Wide Arc III', cost: 20, desc: 'Zone +25% bigger', effects: {zone: 1.25}},
+            {id: 'gambler', name: 'Gambler\'s Rod', cost: 22, desc: '12% auto-success but zone -10%', effects: {lucky: 0.12, zone: 0.9}},
+            {id: 'speedy', name: 'Speed Demon', cost: 28, desc: 'Bites 30% faster + dot 10% faster', effects: {bite: 0.7, dot: 1.1}},
+            {id: 'zen', name: 'Zen Rod', cost: 30, desc: 'Dot 25% slower + zone +15%', effects: {dot: 0.75, zone: 1.15}},
+            {id: 'forgiving', name: 'Forgiving Rod', cost: 32, desc: 'Zone +30%', effects: {zone: 1.3}},
+            {id: 'lucky3', name: 'Lucky Charm III', cost: 35, desc: '15% auto-success', effects: {lucky: 0.15}},
+            {id: 'veteran', name: 'Veteran\'s Rod', cost: 38, desc: 'Well-rounded mid-tier', effects: {bite: 0.78, dot: 0.9, zone: 1.18}},
+            {id: 'pro1', name: 'Pro Rod I', cost: 40, desc: 'Solid upgrades', effects: {bite: 0.8, dot: 0.9, zone: 1.15}},
+            {id: 'pro2', name: 'Pro Rod II', cost: 50, desc: 'Stronger upgrades', effects: {bite: 0.75, dot: 0.85, zone: 1.2}},
+            {id: 'titan', name: 'Titan Rod', cost: 55, desc: 'Powerful balanced', effects: {bite: 0.73, zone: 1.24}},
+            {id: 'elite1', name: 'Elite Series I', cost: 60, desc: 'Great balanced', effects: {bite: 0.75, dot: 0.88, zone: 1.22}},
+            {id: 'elite2', name: 'Elite Series II', cost: 75, desc: 'Excellent balanced', effects: {bite: 0.72, dot: 0.84, zone: 1.26}},
+            {id: 'master', name: 'Master Rod', cost: 80, desc: 'Best balanced', effects: {bite: 0.7, dot: 0.8, zone: 1.3, lucky: 0.08}},
+            {id: 'apex', name: 'Apex Predator', cost: 90, desc: 'Near-perfect', effects: {bite: 0.68, dot: 0.82, zone: 1.32, lucky: 0.1}},
+            {id: 'legend', name: 'Legendary Rod', cost: 120, desc: 'Legendary power', effects: {bite: 0.65, dot: 0.78, zone: 1.35, lucky: 0.12}},
+            {id: 'mythic', name: 'Mythic Angler', cost: 150, desc: 'The ultimate rod', effects: {bite: 0.6, dot: 0.75, zone: 1.4, lucky: 0.15}}
+        ].sort((a, b) => a.cost - b.cost);
+
+        let rodEffects = {};
+
+        function applyRod() {
+            const rod = rods.find(r => r.id === currentRodId) || rods[0];
+            rodEffects = rod.effects || {};
+        }
+
+        function getPrefix() {
+            return `save${currentSlot}_`;
+        }
+
+        function loadSlot(slot) {
+            const prefix = `save${slot}_`;
+            fishCaught = parseInt(localStorage.getItem(prefix + 'fishCaught') || '0');
+            coins = parseInt(localStorage.getItem(prefix + 'coins') || '0');
+            ownedRods = JSON.parse(localStorage.getItem(prefix + 'ownedRods') || '["basic"]');
+            currentRodId = localStorage.getItem(prefix + 'currentRodId') || 'basic';
+            difficulty = localStorage.getItem(prefix + 'difficulty') || null;
+            applyRod();
+            updateUI();
+        }
+
+        function saveSlot() {
+            if (!currentSlot) return;
+            const prefix = getPrefix();
+            localStorage.setItem(prefix + 'fishCaught', fishCaught);
+            localStorage.setItem(prefix + 'coins', coins);
+            localStorage.setItem(prefix + 'ownedRods', JSON.stringify(ownedRods));
+            localStorage.setItem(prefix + 'currentRodId', currentRodId);
+            if (difficulty) localStorage.setItem(prefix + 'difficulty', difficulty);
+        }
+
+        function wipeSlot(slot) {
+            if (!confirm(`Are you SURE you want to permanently delete Save Slot ${slot}? This cannot be undone!`)) return;
+            const prefix = `save${slot}_`;
+            ['fishCaught', 'coins', 'ownedRods', 'currentRodId', 'difficulty'].forEach(key => localStorage.removeItem(prefix + key));
+            renderSaves();
+        }
+
+        function renderSaves() {
+            savesList.innerHTML = '';
+            for (let i = 1; i <= TOTAL_SLOTS; i++) {
+                const prefix = `save${i}_`;
+                const f = parseInt(localStorage.getItem(prefix + 'fishCaught') || '0');
+                const c = parseInt(localStorage.getItem(prefix + 'coins') || '0');
+                const diff = localStorage.getItem(prefix + 'difficulty') || 'Not set';
+
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <button class="big-btn" data-slot="${i}">Save Slot ${i}</button>
+                    <div class="save-info">
+                        Fish: ${f} 🐟 | Coins: ${c} 🪙 | Difficulty: ${diff.toUpperCase()}
+                    </div>
+                    <button class="danger-btn" data-wipe="${i}">Wipe Save</button><br><br>
+                `;
+                savesList.appendChild(div);
+            }
+
+            savesList.querySelectorAll('[data-slot]').forEach(btn => {
+                btn.onclick = () => {
+                    currentSlot = btn.dataset.slot;
+                    loadSlot(currentSlot);
+                    currentInfo.textContent = `Save Slot ${currentSlot} — Difficulty: ${difficulty ? difficulty.toUpperCase() : 'Choose below'}`;
+                    saveScreen.style.display = 'none';
+                    if (difficulty) {
+                        setDifficultyParams();
+                        gameContainer.style.display = 'flex';
+                        points = 0;
+                        updateUI();
+                        startGame();
+                    } else {
+                        difficultyScreen.style.display = 'block';
+                    }
+                };
+            });
+
+            savesList.querySelectorAll('[data-wipe]').forEach(btn => {
+                btn.onclick = () => wipeSlot(btn.dataset.wipe);
+            });
+        }
+
+        function setDifficultyParams() {
+            if (difficulty === 'easy') {
+                hitsNeeded = 1;
+                baseZoneSize = 80;
+                dotSpeed = 3;
+                speedIncreasePerHit = 1.0;
+            } else if (difficulty === 'casual') {
+                hitsNeeded = 2;
+                baseZoneSize = 70;
+                dotSpeed = 3.5;
+                speedIncreasePerHit = 1.0;
+            } else if (difficulty === 'normal') {
+                hitsNeeded = 3;
+                baseZoneSize = 60;
+                dotSpeed = 4;
+                speedIncreasePerHit = 1.0;
+            } else if (difficulty === 'hard') {
+                hitsNeeded = 4;
+                baseZoneSize = 50;
+                dotSpeed = 4.5;
+                speedIncreasePerHit = 1.0;
+            } else if (difficulty === 'expert') {
+                hitsNeeded = 5;
+                baseZoneSize = 45;
+                dotSpeed = 5;
+                speedIncreasePerHit = 1.0;
+            } else if (difficulty === 'hardcore') {
+                hitsNeeded = 4;
+                baseZoneSize = 60;
+                dotSpeed = 4;
+                speedIncreasePerHit = 1.08;
+            } else if (difficulty === 'master') {
+                hitsNeeded = 6;
+                baseZoneSize = 40;
+                dotSpeed = 5.5;
+                speedIncreasePerHit = 1.10;
+            }
+        }
+
+        // Navigation
+        startBtn.onclick = () => {
+            titleScreen.style.display = 'none';
+            saveScreen.style.display = 'block';
+            renderSaves();
+        };
+
+        backToTitle.onclick = () => {
+            saveScreen.style.display = 'none';
+            titleScreen.style.display = 'block';
+        };
+
+        backToSaves.onclick = () => {
+            difficultyScreen.style.display = 'none';
+            saveScreen.style.display = 'block';
+            renderSaves();
+        };
+
+        difficultyScreen.querySelectorAll('[data-diff]').forEach(btn => {
+            btn.onclick = () => {
+                difficulty = btn.dataset.diff;
+                saveSlot();
+                setDifficultyParams();
+
+                difficultyScreen.style.display = 'none';
+                gameContainer.style.display = 'flex';
+                currentInfo.textContent = `Save Slot ${currentSlot} — Difficulty: ${difficulty.toUpperCase()}`;
+                points = 0;
+                updateUI();
+                startGame();
+            };
+        });
+
+        backBtn.onclick = () => {
+            saveSlot();
+            gameContainer.style.display = 'none';
+            titleScreen.style.display = 'block';
+            cancelAnimationFrame(animationFrame);
+            clearTimeout(redTimeout);
+        };
+
+        // UI update
+        function updateUI() {
+            fishDisplay.textContent = `🐟 x${fishCaught}`;
+            coinsDisplay.textContent = `Coins: ${coins} 🪙`;
+            shopCoins.textContent = coins;
+            scoreDisplay.textContent = `Points: ${points} / ${hitsNeeded}`;
+        }
+
+        sellFishBtn.onclick = () => {
+            if (fishCaught > 0) {
+                fishCaught--;
+                coins++;
+                updateUI();
+                saveSlot();
+            }
+        };
+
+        // Game logic
+        function startGame() {
+            drawBobber();
+            scheduleBite();
+        }
+
+        function scheduleBite() {
+            const mult = rodEffects.bite || 1;
+            const delay = Math.max(300, (Math.random() * 2000 + 800) * mult);
+            setTimeout(() => !inMiniGame && makeRed(), delay);
+        }
+
+        function makeRed() {
+            isRed = true;
+            drawBobber();
+            redTimeout = setTimeout(() => {
+                if (isRed) {
+                    isRed = false;
+                    drawBobber();
+                    scheduleBite();
+                }
+            }, 1000);
+        }
+
+        function drawBobber() {
+            ctx.clearRect(0,0,540,420);
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0,0,540,210);
+            ctx.fillStyle = '#006994';
+            ctx.fillRect(0,210,540,210);
+            ctx.beginPath();
+            ctx.arc(270,160,28,0,Math.PI*2);
+            ctx.fillStyle = isRed ? '#ff4444' : '#ffff44';
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        function handleAction(e) {
+            if (e && e.type === 'keydown' && e.code !== 'Space') return;
+            if (e && e.type === 'keydown') e.preventDefault();
+
+            if (!inMiniGame && isRed) {
+                clearTimeout(redTimeout);
+                isRed = false;
+                inMiniGame = true;
+                dotAngle = 0;
+                zoneStart = Math.random() * 360;
+                dotSpeed = ({easy:3, casual:3.5, normal:4, hard:4.5, expert:5, hardcore:4, master:5.5}[difficulty] || 4) * (rodEffects.dot || 1);
+                animateMiniGame();
+            } else if (inMiniGame) {
+                const zoneMult = rodEffects.zone || 1;
+                const zoneSize = baseZoneSize * Math.pow(0.9, fishCaught) * zoneMult;
+                const norm = (dotAngle % 360 + 360) % 360;
+                const zoneEnd = (zoneStart + zoneSize) % 360;
+                let inZone = zoneEnd > zoneStart ? norm >= zoneStart && norm <= zoneEnd : norm >= zoneStart || norm <= zoneEnd;
+
+                const success = Math.random() < (rodEffects.lucky || 0) || inZone;
+
+                if (success) {
+                    points++;
+                    updateUI();
+                    dotSpeed *= speedIncreasePerHit;
+
+                    let old = zoneStart;
+                    do { zoneStart = Math.random() * 360; } while (angleDistance(zoneStart, old) < MIN_ZONE_DIST);
+
+                    if (points >= hitsNeeded) {
+                        fishCaught++;
+                        points = 0;
+                        updateUI();
+                        saveSlot();
+                        inMiniGame = false;
+                        cancelAnimationFrame(animationFrame);
+                        drawBobber();
+                        scheduleBite();
+                    }
+                } else {
+                    points = Math.max(0, points - 1);
+                    updateUI();
+                    inMiniGame = false;
+                    cancelAnimationFrame(animationFrame);
+                    drawBobber();
+                    scheduleBite();
+                }
+            }
+        }
+
+        canvas.addEventListener('click', handleAction);
+        document.addEventListener('keydown', handleAction);
+
+        function drawMiniGame() {
+            ctx.clearRect(0,0,540,420);
+            const cx = 270, cy = 210, r = 130;
+
+            ctx.beginPath();
+            ctx.arc(cx,cy,r,0,Math.PI*2);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            const zoneMult = rodEffects.zone || 1;
+            const zoneSize = baseZoneSize * Math.pow(0.9, fishCaught) * zoneMult;
+            ctx.beginPath();
+            ctx.arc(cx,cy,r, zoneStart*Math.PI/180, (zoneStart+zoneSize)*Math.PI/180);
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 25;
+            ctx.stroke();
+
+            const dx = cx + r * Math.cos(dotAngle * Math.PI / 180);
+            const dy = cy + r * Math.sin(dotAngle * Math.PI / 180);
+            ctx.beginPath();
+            ctx.arc(dx,dy,18,0,Math.PI*2);
+            ctx.fillStyle = '#0066ff';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        function animateMiniGame() {
+            if (!inMiniGame) return;
+            drawMiniGame();
+            dotAngle = (dotAngle + dotSpeed) % 360;
+            animationFrame = requestAnimationFrame(animateMiniGame);
+        }
+
+        // Shop
+        shopBtn.onclick = () => {
+            shopModal.style.display = 'flex';
+            renderShop();
+        };
+        closeShop.onclick = () => shopModal.style.display = 'none';
+        shopModal.onclick = e => { if (e.target === shopModal) shopModal.style.display = 'none'; };
+
+        function renderShop() {
+            const rod = rods.find(r => r.id === currentRodId) || rods[0];
+            currentRodDiv.textContent = `Equipped: ${rod.name}`;
+            rodsList.innerHTML = '';
+            rods.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'rod-item';
+                let btn = '';
+                if (ownedRods.includes(r.id)) {
+                    btn = currentRodId === r.id ? '<strong>Equipped</strong>' : `<button class="equip-btn" data-id="${r.id}">Equip</button>`;
+                } else if (coins >= r.cost) {
+                    btn = `<button class="buy-btn" data-id="${r.id}">Buy (${r.cost} 🪙)</button>`;
+                } else {
+                    btn = `<span class="cant-afford">(${r.cost} 🪙)</span>`;
+                }
+                div.innerHTML = `<h3>${r.name} — ${r.cost} 🪙</h3><p>${r.desc}</p>${btn}`;
+                rodsList.appendChild(div);
+            });
+
+            rodsList.querySelectorAll('.buy-btn').forEach(b => b.onclick = () => {
+                const id = b.dataset.id;
+                const rod = rods.find(r => r.id === id);
+                if (rod && coins >= rod.cost) {
+                    coins -= rod.cost;
+                    ownedRods.push(id);
+                    updateUI();
+                    saveSlot();
+                    renderShop();
+                }
+            });
+
+            rodsList.querySelectorAll('.equip-btn').forEach(b => b.onclick = () => {
+                currentRodId = b.dataset.id;
+                applyRod();
+                saveSlot();
+                renderShop();
+            });
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
