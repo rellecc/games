@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Haunted Escape</title>
+<style>
+  body {
+    background-color: black;
+    color: white;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  #game, #titleScreen {
+    width: 100%;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 20px;
+    margin: 10px;
+    cursor: pointer;
+    background-color: darkred;
+    color: white;
+    border: none;
+  }
+  #message {
+    margin-top: 20px;
+    font-size: 22px;
+  }
+</style>
+</head>
+<body>
+
+<div id="titleScreen">
+  <h1>Haunted Escape</h1>
+  <button onclick="startGame()">Play</button>
+</div>
+
+<div id="game" style="display:none;">
+  <h2 id="location">You are in a dark hallway...</h2>
+  <div id="choices"></div>
+  <div id="message"></div>
+  <div id="health">Health: 100</div>
+</div>
+
+<script>
+let health = 100;
+
+function startGame() {
+  document.getElementById('titleScreen').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  nextEvent();
+}
+
+function nextEvent() {
+  const events = [
+    {text: "A shadow moves behind you.", damage: 10},
+    {text: "You hear whispers in the dark.", damage: 5},
+    {text: "A ghost lunges at you!", damage: 15},
+    {text: "You found a safe room. Rest here.", heal: 20},
+    {text: "Creepy laughter surrounds you.", damage: 5},
+  ];
+  const e = events[Math.floor(Math.random() * events.length)];
+
+  document.getElementById('message').innerText = e.text;
+  if(e.damage) health -= e.damage;
+  if(e.heal) health += e.heal;
+  if(health > 100) health = 100;
+  document.getElementById('health').innerText = "Health: " + health;
+
+  if(health <= 0){
+    document.getElementById('location').innerText = "You have succumbed to the horrors...";
+    document.getElementById('choices').innerHTML = '<button onclick="restart()">Restart</button>';
+    return;
+  }
+
+  document.getElementById('choices').innerHTML = `
+    <button onclick="nextEvent()">Move Forward</button>
+    <button onclick="searchRoom()">Search Room</button>
+  `;
+}
+
+function searchRoom() {
+  const outcome = Math.random();
+  if(outcome < 0.5){
+    document.getElementById('message').innerText = "You found a medkit! +20 Health.";
+    health += 20;
+    if(health > 100) health = 100;
+  } else {
+    document.getElementById('message').innerText = "A trap! You take 15 damage.";
+    health -= 15;
+    if(health <= 0){
+      document.getElementById('location').innerText = "You have succumbed to the horrors...";
+      document.getElementById('choices').innerHTML = '<button onclick="restart()">Restart</button>';
+      return;
+    }
+  }
+  document.getElementById('health').innerText = "Health: " + health;
+  document.getElementById('choices').innerHTML = '<button onclick="nextEvent()">Move Forward</button>';
+}
+
+function restart(){
+  health = 100;
+  document.getElementById('location').innerText = "You are in a dark hallway...";
+  nextEvent();
+}
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Apple II Lemonade Stand</title>
+<style>
+  body {
+    background: black;
+    color: white;
+    font-family: "Courier New", monospace;
+    padding: 20px;
+    white-space: pre;
+  }
+  input { width: 50px; background: black; color: white; border: 1px solid white; }
+  button { background: black; color: white; border: 1px solid white; margin-top: 5px; }
+  #log { margin-top: 10px; }
+</style>
+</head>
+<body>
+<h1>LEMONADE STAND</h1>
+<p>Goal: Make the most profit in 7 days!</p>
+
+<div id="game"></div>
+<button id="nextDayBtn" style="display:none;">Next Day</button>
+
+<script>
+let day = 1;
+let money = 30;
+let inventory = { cups: 0, pitchers: 0, lemons: 0, sugar: 0, ice: 0 };
+let pricePerCup = 1;
+let cupsPerPitcher = 10;
+
+const gameDiv = document.getElementById('game');
+const nextDayBtn = document.getElementById('nextDayBtn');
+
+function randomWeather() {
+    let r = Math.random();
+    if (r < 0.3) return { type: "Cold", demandModifier: 0.5 };
+    if (r < 0.6) return { type: "Mild", demandModifier: 1 };
+    return { type: "Hot", demandModifier: 1.5 };
+}
+
+function renderDay() {
+    gameDiv.innerHTML =
+`DAY ${day}
+Money: $${money.toFixed(2)}
+Inventory: ${inventory.cups} cups, ${inventory.pitchers} pitchers
+Lemons: ${inventory.lemons}, Sugar: ${inventory.sugar}, Ice: ${inventory.ice}
+
+Buy cups ($0.5 each): <input id="buyCups" type="number" min="0" value="0"><br>
+Buy lemons ($0.2 each): <input id="buyLemons" type="number" min="0" value="0"><br>
+Buy sugar ($0.1 per cup): <input id="buySugar" type="number" min="0" value="0"><br>
+Buy ice ($0.05 per cube): <input id="buyIce" type="number" min="0" value="0"><br>
+Cups per pitcher: <input id="cupsPerPitcher" type="number" min="1" value="${cupsPerPitcher}"><br>
+Price per cup: <input id="price" type="number" min="0.1" step="0.1" value="${pricePerCup}"><br>
+<button id="startDayBtn">Start Day</button>
+<pre id="log"></pre>
+`;
+    document.getElementById('startDayBtn').onclick = startDay;
+}
+
+function startDay() {
+    let buyCups = parseInt(document.getElementById('buyCups').value);
+    let buyLemons = parseInt(document.getElementById('buyLemons').value);
+    let buySugar = parseInt(document.getElementById('buySugar').value);
+    let buyIce = parseInt(document.getElementById('buyIce').value);
+    cupsPerPitcher = parseInt(document.getElementById('cupsPerPitcher').value);
+    pricePerCup = parseFloat(document.getElementById('price').value);
+
+    let cost = buyCups*0.5 + buyLemons*0.2 + buySugar*0.1 + buyIce*0.05;
+    if(cost > money){ alert("Not enough money!"); return; }
+    money -= cost;
+    inventory.cups += buyCups;
+    inventory.lemons += buyLemons;
+    inventory.sugar += buySugar;
+    inventory.ice += buyIce;
+
+    // Make pitchers
+    inventory.pitchers = Math.min(Math.floor(inventory.lemons/cupsPerPitcher), Math.floor(inventory.sugar/cupsPerPitcher), Math.floor(inventory.ice/cupsPerPitcher));
+    let actualCups = inventory.pitchers * cupsPerPitcher;
+    inventory.cups += actualCups;
+
+    let weather = randomWeather();
+    let customers = Math.floor(Math.random() * 50 + 30);
+    let demandModifier = weather.demandModifier;
+    let sold = 0;
+
+    for(let i=0;i<customers;i++){
+        if(inventory.cups>0 && Math.random() < Math.max(0,1 - pricePerCup/5)*demandModifier){
+            sold++;
+            inventory.cups--;
+            money += pricePerCup;
+        }
+    }
+
+    inventory.lemons -= inventory.pitchers*cupsPerPitcher;
+    inventory.sugar -= inventory.pitchers*cupsPerPitcher;
+    inventory.ice -= inventory.pitchers*cupsPerPitcher;
+    inventory.pitchers = 0;
+
+    document.getElementById('log').textContent =
+`Weather: ${weather.type}
+Customers: ${customers}
+Cups sold: ${sold}
+Revenue: $${(sold*pricePerCup).toFixed(2)}
+End money: $${money.toFixed(2)}
+Remaining inventory: ${inventory.cups} cups
+Lemons: ${inventory.lemons}, Sugar: ${inventory.sugar}, Ice: ${inventory.ice}`;
+
+    nextDayBtn.style.display='block';
+    nextDayBtn.onclick = () => {
+        day++;
+        if(day>7){ alert("GAME OVER! Final money: $" + money.toFixed(2)); location.reload(); }
+        else{ nextDayBtn.style.display='none'; renderDay(); }
+    }
+}
+
+renderDay();
+</script>
+</body>
+</html>
+

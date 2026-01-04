@@ -1,0 +1,610 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minigame Hub</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #0a3d0a, #228B22);
+            font-family: 'Arial Black', Arial, sans-serif;
+            color: white;
+            height: 100vh;
+            overflow: auto;
+        }
+        #container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .screen {
+            text-align: center;
+            padding: 50px 20px;
+            display: none;
+        }
+        #titleScreen {
+            display: block;
+        }
+        h1 {
+            font-size: 5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .bigbtn {
+            font-size: 2em;
+            padding: 20px 40px;
+            margin: 10px;
+            border-radius: 15px;
+            background: linear-gradient(gold, #ffd700);
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .bigbtn:hover {
+            background: linear-gradient(#ffd700, gold);
+            transform: scale(1.05);
+        }
+        .bigbtn:active {
+            transform: scale(0.98);
+        }
+        .btn {
+            font-size: 1.2em;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 10px;
+            background: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #777;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+        .saveSlot {
+            border: 3px solid gold;
+            padding: 30px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.3);
+            transition: all 0.2s;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .saveSlot:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.02);
+        }
+        .bigcoins {
+            font-size: 4em;
+            color: gold;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+            margin: 10px 0;
+        }
+        #gameHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            font-size: 1.5em;
+        }
+        #gameBtns {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        #playArea {
+            margin-top: 50px;
+            font-size: 1.5em;
+        }
+        #playArea input {
+            font-size: 1.2em;
+            padding: 10px;
+            width: 150px;
+            border-radius: 10px;
+            border: 2px solid gold;
+            background: black;
+            color: white;
+            text-align: center;
+        }
+        #bjTable {
+            font-size: 2em;
+            margin: 30px 0;
+        }
+        .card {
+            font-size: 2.5em;
+            margin: 0 8px;
+            display: inline-block;
+            min-width: 60px;
+            padding: 8px 12px;
+            background: white;
+            color: black;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .hiddenCard {
+            background: #00008b !important;
+            color: white !important;
+            font-size: 2.5em !important;
+        }
+        #slotsReels {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 8em;
+            margin: 30px 0;
+            height: 150px;
+        }
+        .reel {
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            text-align: center;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+        }
+        #guide {
+            font-size: 1em;
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: left;
+        }
+        #guide table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #guide th, #guide td {
+            border: 1px solid gold;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+
+        <div id="titleScreen" class="screen">
+            <h1>Minigame Hub</h1>
+            <p style="font-size: 2.5em; margin: 20px 0;">made by Corgii</p>
+            <button class="bigbtn" onclick="showSaves()">Play</button>
+        </div>
+
+        <div id="savesScreen" class="screen">
+            <h2>Select Save File</h2>
+            <div id="savesGrid" class="grid"></div>
+            <button class="btn" onclick="showTitle()">Back to Title</button>
+        </div>
+
+        <div id="diffScreen" class="screen">
+            <h2>Select Difficulty</h2>
+            <p style="font-size: 1.5em; margin-bottom: 40px;">This cannot be changed later!</p>
+            <button class="bigbtn" onclick="setDiff('easy')">Easy<br><span class="bigcoins">150</span> Coins</button>
+            <button class="bigbtn" onclick="setDiff('normal')">Normal<br><span class="bigcoins">100</span> Coins</button>
+            <button class="bigbtn" onclick="setDiff('hard')">Hard<br><span class="bigcoins">50</span> Coins</button>
+            <button class="bigbtn" onclick="setDiff('extreme')">Extreme<br><span class="bigcoins">25</span> Coins</button>
+            <button class="btn" onclick="showSaves()" style="margin-top: 30px;">Back</button>
+        </div>
+
+        <div id="gameScreen" class="screen">
+            <div id="gameHeader">
+                <span>Coins: <span id="coins" class="bigcoins">0</span></span>
+                <span id="diffLabel" style="font-size: 1.5em;"></span>
+                <button class="btn" onclick="showTitle()">Back to Title</button>
+            </div>
+            <div id="gameBtns">
+                <button class="bigbtn" onclick="showSlots()">🎰 Slots</button>
+                <button class="bigbtn" onclick="showJack()">🃏 Blackjack</button>
+            </div>
+            <div id="playArea"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentSave = null;
+        const suits = ['♠', '♥', '♦', '♣'];
+        const ranksDisplay = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        // Blackjack globals
+        let bjDeck = [];
+        let playerHand = [];
+        let dealerHand = [];
+        let bjBet = 0;
+
+        // Slots globals
+        const symbols = ['7️⃣', '🍒', '🍇', '🍊', '🍉', '🔔', '💎'];
+        const payouts = {
+            '7️⃣': 50,
+            '🍒': 20,
+            '🍇': 15,
+            '🍊': 10,
+            '🍉': 8,
+            '🔔': 5,
+            '💎': 3
+        };
+
+        function getSave(slot) {
+            const data = localStorage.getItem(`save${slot}`);
+            return data ? JSON.parse(data) : null;
+        }
+
+        function setSave(slot, data) {
+            localStorage.setItem(`save${slot}`, JSON.stringify(data));
+        }
+
+        function deleteSave(slot) {
+            localStorage.removeItem(`save${slot}`);
+        }
+
+        function updateCoins(newCoins) {
+            const c = Math.max(0, newCoins);
+            document.getElementById('coins').textContent = c.toLocaleString();
+            if (currentSave === null) return;
+            const save = getSave(currentSave);
+            if (!save) return;
+            save.coins = c;
+            setSave(currentSave, save);
+        }
+
+        function checkBankruptcy() {
+            const currentCoins = parseInt(document.getElementById('coins').textContent.replace(/,/g,'')) || 0;
+            if (currentCoins === 0) {
+                alert('Out of coins! You went bankrupt.\nSave file deleted.');
+                deleteSave(currentSave);
+                currentSave = null;
+                showSaves();
+            }
+        }
+
+        function newDeck() {
+            let deck = [];
+            for (let i = 0; i < 52; i++) deck.push(i);
+            deck.sort(() => Math.random() - 0.5);
+            return deck;
+        }
+
+        function cardStr(card, hidden = false) {
+            if (hidden) return '<span class="card hiddenCard">?</span>';
+            const suitIdx = Math.floor(card / 13);
+            const rankIdx = card % 13;
+            const suit = suits[suitIdx];
+            const rank = ranksDisplay[rankIdx];
+            const color = (suit === '♥' || suit === '♦') ? 'red' : 'black';
+            return `<span class="card" style="color:${color}">${suit}${rank}</span>`;
+        }
+
+        function getCardValue(card) {
+            const r = card % 13;
+            return r === 0 ? 11 : Math.min(r + 1, 10);
+        }
+
+        function handValue(hand) {
+            let val = 0;
+            let aces = 0;
+            for (let card of hand) {
+                val += getCardValue(card);
+                if (card % 13 === 0) aces++;
+            }
+            while (val > 21 && aces > 0) {
+                val -= 10;
+                aces--;
+            }
+            return val;
+        }
+
+        function showTitle() {
+            document.querySelectorAll('.screen').forEach(e => e.style.display = 'none');
+            document.getElementById('titleScreen').style.display = 'block';
+        }
+
+        function showSaves() {
+            document.querySelectorAll('.screen').forEach(e => e.style.display = 'none');
+            document.getElementById('savesScreen').style.display = 'block';
+            const grid = document.getElementById('savesGrid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 4; i++) {
+                const div = document.createElement('div');
+                div.className = 'saveSlot';
+                const save = getSave(i);
+                if (save) {
+                    div.innerHTML = `
+                        <h3>Save ${i}</h3>
+                        <div class="bigcoins">${save.coins.toLocaleString()}</div>
+                        <p>${save.diff.toUpperCase()}</p>
+                        <button class="btn" onclick="chooseSave(${i}); event.stopPropagation();">Load</button>
+                        <button class="btn" style="background: #c00; color: white;" onclick="wipeSave(${i}); event.stopPropagation();">Wipe</button>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <h3>Save ${i}</h3>
+                        <p style="font-size: 1.5em;">New Save</p>
+                        <button class="btn" onclick="chooseSave(${i}); event.stopPropagation();">Choose</button>
+                    `;
+                }
+                div.onclick = () => chooseSave(i);
+                grid.appendChild(div);
+            }
+        }
+
+        function chooseSave(slot) {
+            currentSave = slot;
+            const save = getSave(slot);
+            if (save) {
+                updateCoins(save.coins);
+                document.getElementById('diffLabel').textContent = save.diff.toUpperCase();
+                showGame();
+            } else {
+                showDiff();
+            }
+        }
+
+        function wipeSave(slot) {
+            deleteSave(slot);
+            showSaves();
+        }
+
+        function showDiff() {
+            document.querySelectorAll('.screen').forEach(e => e.style.display = 'none');
+            document.getElementById('diffScreen').style.display = 'block';
+        }
+
+        function setDiff(diff) {
+            const startCoins = { easy: 150, normal: 100, hard: 50, extreme: 25 }[diff];
+            const saveData = { diff: diff, coins: startCoins };
+            setSave(currentSave, saveData);
+            updateCoins(startCoins);
+            document.getElementById('diffLabel').textContent = diff.toUpperCase();
+            showGame();
+        }
+
+        function showGame() {
+            document.querySelectorAll('.screen').forEach(e => e.style.display = 'none');
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('playArea').innerHTML = '';
+        }
+
+        function showSlots() {
+            checkBankruptcy();
+            const currentCoins = parseInt(document.getElementById('coins').textContent.replace(/,/g,'')) || 0;
+            document.getElementById('playArea').innerHTML = `
+                <h2>🎰 Slots</h2>
+                <p>Bet amount (max ${currentCoins.toLocaleString()}):</p>
+                <input id="slotBet" type="number" min="1" max="${currentCoins}" value="${Math.min(10, currentCoins)}">
+                <br><br>
+                <button class="bigbtn" onclick="spinSlots()">Spin!</button>
+                <div id="slotsReels"></div>
+                <p id="slotMsg" style="font-size: 1.4em; min-height: 50px; margin-top: 20px;"></p>
+                <button class="btn" onclick="showGuide()">View Guide</button>
+                <div id="guide" style="display: none;">
+                    <h3>Slots Guide</h3>
+                    <table>
+                        <tr><th>Combination</th><th>Payout (x bet)</th></tr>
+                        <tr><td>3x 7️⃣</td><td>50x</td></tr>
+                        <tr><td>3x 🍒</td><td>20x</td></tr>
+                        <tr><td>3x 🍇</td><td>15x</td></tr>
+                        <tr><td>3x 🍊</td><td>10x</td></tr>
+                        <tr><td>3x 🍉</td><td>8x</td></tr>
+                        <tr><td>3x 🔔</td><td>5x</td></tr>
+                        <tr><td>3x 💎</td><td>3x</td></tr>
+                        <tr><td>Any 3 matching</td><td>2x</td></tr>
+                        <tr><td>2 matching + any</td><td>1x (return bet)</td></tr>
+                        <tr><td>No matches</td><td>Lose bet</td></tr>
+                    </table>
+                    <button class="btn" onclick="hideGuide()">Close</button>
+                </div>
+            `;
+        }
+
+        function showGuide() {
+            document.getElementById('guide').style.display = 'block';
+        }
+
+        function hideGuide() {
+            document.getElementById('guide').style.display = 'none';
+        }
+
+        function randomSymbol() {
+            return symbols[Math.floor(Math.random() * symbols.length)];
+        }
+
+        function spinSlots() {
+            const betEl = document.getElementById('slotBet');
+            const bet = parseInt(betEl.value);
+            const currentCoins = parseInt(document.getElementById('coins').textContent.replace(/,/g,''));
+            if (isNaN(bet) || bet <= 0 || bet > currentCoins) {
+                document.getElementById('slotMsg').textContent = 'Invalid bet!';
+                return;
+            }
+
+            updateCoins(currentCoins - bet);
+            betEl.disabled = true;
+            document.getElementById('slotMsg').textContent = 'Spinning...';
+
+            const reels = document.getElementById('slotsReels');
+            reels.innerHTML = '';
+            const reelEls = [];
+            const intervals = [];
+            const speeds = [50, 70, 90]; // Different speeds in ms
+            const finalResults = [randomSymbol(), randomSymbol(), randomSymbol()];
+
+            for (let i = 0; i < 3; i++) {
+                const reel = document.createElement('div');
+                reel.className = 'reel';
+                reel.textContent = randomSymbol();
+                reels.appendChild(reel);
+                reelEls.push(reel);
+
+                intervals[i] = setInterval(() => {
+                    let sym = randomSymbol();
+                    while (sym === finalResults[i]) sym = randomSymbol(); // Avoid showing final during cycle
+                    reel.textContent = sym;
+                }, speeds[i]);
+            }
+
+            // Stop each reel at different times
+            setTimeout(() => stopReel(0), 1500);
+            setTimeout(() => stopReel(1), 2000);
+            setTimeout(() => stopReel(2), 2500);
+
+            function stopReel(index) {
+                clearInterval(intervals[index]);
+                reelEls[index].textContent = finalResults[index];
+                if (index === 2) calculatePayout(finalResults, bet);
+            }
+        }
+
+        function calculatePayout(results, bet) {
+            let payout = 0;
+            if (results[0] === results[1] && results[1] === results[2]) {
+                payout = payouts[results[0]] || 2;
+            } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
+                payout = 1;
+            }
+
+            const winAmount = bet * payout;
+            if (payout > 0) {
+                updateCoins(parseInt(document.getElementById('coins').textContent.replace(/,/g,'')) + winAmount);
+                document.getElementById('slotMsg').innerHTML = `<span style="color:lime;">Win! +${(winAmount - bet).toLocaleString()} coins (net)</span>`;
+            } else {
+                document.getElementById('slotMsg').innerHTML = `<span style="color:red;">Lose! Bet lost.</span>`;
+                checkBankruptcy();
+            }
+            document.getElementById('slotBet').disabled = false;
+        }
+
+        function showJack() {
+            checkBankruptcy();
+            const currentCoins = parseInt(document.getElementById('coins').textContent.replace(/,/g,'')) || 0;
+            document.getElementById('playArea').innerHTML = `
+                <h2>🃏 Blackjack</h2>
+                <p>Bet amount (max ${currentCoins.toLocaleString()}):</p>
+                <input id="bjBet" type="number" min="1" max="${currentCoins}" value="${Math.min(10, currentCoins)}">
+                <br><br>
+                <button id="bjDealBtn" class="bigbtn" onclick="bjStartGame()">Deal</button>
+                <div id="bjTable" style="display:none;"></div>
+                <div id="bjControls" style="display:none; margin-top:30px;">
+                    <button class="btn" onclick="bjHit()">Hit</button>
+                    <button class="btn" onclick="bjStand()">Stand</button>
+                </div>
+                <p id="bjResult" style="font-size:1.6em; min-height:50px; margin-top:20px;"></p>
+            `;
+        }
+
+        function bjStartGame() {
+            bjBet = parseInt(document.getElementById('bjBet').value);
+            const currentCoins = parseInt(document.getElementById('coins').textContent.replace(/,/g,''));
+            if (isNaN(bjBet) || bjBet <= 0 || bjBet > currentCoins) {
+                alert('Invalid bet!');
+                return;
+            }
+
+            updateCoins(currentCoins - bjBet);
+
+            bjDeck = newDeck();
+            playerHand = [bjDeck.pop(), bjDeck.pop()];
+            dealerHand = [bjDeck.pop(), bjDeck.pop()];
+
+            document.getElementById('bjDealBtn').style.display = 'none';
+            document.getElementById('bjTable').style.display = 'block';
+            document.getElementById('bjControls').style.display = 'block';
+            document.getElementById('bjResult').textContent = '';
+
+            bjUpdateTable();
+        }
+
+        function bjUpdateTable() {
+            const pVal = handValue(playerHand);
+            const dealerHTML = cardStr(dealerHand[0]) + ' ' + cardStr(null, true);
+            document.getElementById('bjTable').innerHTML = `
+                <div style="margin:30px 0;">Dealer: ${dealerHTML} <strong>?</strong></div>
+                <div style="margin:30px 0;">Player: ${playerHand.map(c => cardStr(c)).join(' ')} <strong>${pVal}</strong></div>
+            `;
+
+            if (pVal > 21) {
+                bjEndGame('You bust! Bet lost.', false);
+            }
+        }
+
+        function bjHit() {
+            playerHand.push(bjDeck.pop());
+            bjUpdateTable();
+        }
+
+        function bjStand() {
+            document.getElementById('bjControls').style.display = 'none';
+
+            while (handValue(dealerHand) < 17) {
+                dealerHand.push(bjDeck.pop());
+            }
+
+            const pVal = handValue(playerHand);
+            const dVal = handValue(dealerHand);
+
+            const dealerHTML = dealerHand.map(c => cardStr(c)).join(' ');
+
+            document.getElementById('bjTable').innerHTML = `
+                <div style="margin:30px 0;">Dealer: ${dealerHTML} <strong>${dVal}</strong></div>
+                <div style="margin:30px 0;">Player: ${playerHand.map(c => cardStr(c)).join(' ')} <strong>${pVal}</strong></div>
+            `;
+
+            let msg, won = null;
+            const currentCoins = parseInt(document.getElementById('coins').textContent.replace(/,/g,''));
+
+            if (pVal > 21) {
+                msg = 'You bust! Bet lost.';
+                won = false;
+            } else if (dVal > 21 || pVal > dVal) {
+                msg = 'You win! +' + (bjBet * 2);
+                updateCoins(currentCoins + (bjBet * 2));
+                won = true;
+            } else if (pVal < dVal) {
+                msg = 'You lose! Bet lost.';
+                won = false;
+            } else {
+                msg = 'Push – bet returned';
+                updateCoins(currentCoins + bjBet);
+                won = null;
+            }
+
+            bjEndGame(msg, won);
+        }
+
+        function bjEndGame(msg, won) {
+            document.getElementById('bjResult').innerHTML = `<span style="color:${won === true ? 'lime' : won === false ? 'red' : 'yellow'};">${msg}</span>`;
+            document.getElementById('bjDealBtn').style.display = 'inline-block';
+            document.getElementById('bjDealBtn').textContent = 'Deal Again';
+
+            if (won === false) {
+                checkBankruptcy();
+            }
+
+            playerHand = [];
+            dealerHand = [];
+            bjDeck = [];
+        }
+
+        // Init
+        showTitle();
+    </script>
+</body>
+</html>
